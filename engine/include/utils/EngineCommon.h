@@ -13,7 +13,6 @@
 
 	Comment out the following to remove debug code from release build
 */
-#define __DEBUG
 
 inline void debug(const char* msg, const char* details = "") {
 	std::cout << "DEBUG: " << msg << " " << details << std::endl;

@@ -6,11 +6,11 @@
 // all code resources are taken from https://github.com/AlmasB/xcube2d/tree/master
 //
 
-#include "XCube2d.h"
-#include <stdio.h>
+#include "../include/XCube2d.h"
 #include <iostream>
-using namespace std;
+#include "utils/EngineCommon.h"
 
+using namespace std;
 
 std::shared_ptr<XCube2Engine> XCube2Engine::instance = nullptr;
 
@@ -28,7 +28,24 @@ XCube2Engine::XCube2Engine()
         #endif
     #endif
 
- 
+    graphicsEngine = std::shared_ptr<GraphicsEngine>(new GraphicsEngine());
+
+#ifdef __DEBUG
+    debug("GraphicsEngine() successful");
+#endif
+
+    eventEngine = std::shared_ptr<EventEngine>(new EventEngine());
+
+#ifdef __DEBUG
+    debug("EventEngine() successful");
+#endif
+
+    physicsEngine = std::shared_ptr<PhysicsEngine>(new PhysicsEngine());
+
+#ifdef __DEBUG
+    debug("PhysicsEngine() successful");
+#endif
+
 
 }
 
@@ -38,8 +55,9 @@ XCube2Engine::~XCube2Engine()
     debug("XCube2Engine::~XCube2Engine() started");
 #endif
 
-//
-    //
+    graphicsEngine.reset();
+    eventEngine.reset();
+    physicsEngine.reset();
 
 #ifdef __DEBUG
     debug("XCube2Engine::~XCube2Engine() finished");
