@@ -1,0 +1,11 @@
+# Create an executable target named 'MyGame' from the source files
+add_executable(MyGame
+        src/main.cpp
+        src/MyGame.cpp
+        include/MyGame.h)
+
+# Specify the include directories for the 'Game' target
+target_include_directories(MyGame PRIVATE include)
+
+# Link the 'Engine' library to the 'MyGame' target
+target_link_libraries(MyGame Engine)

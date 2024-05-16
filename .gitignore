@@ -1,24 +1,6 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# CLion project files
+.idea
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# build dir
-build/
+# CMake build directories
+cmake-build-debug
+cmake-build-release
