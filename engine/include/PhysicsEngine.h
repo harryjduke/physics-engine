@@ -1,71 +1,67 @@
-#ifndef __PHYSICS_ENGINE_H__
-#define __PHYSICS_ENGINE_H__
+#ifndef PHYSICS_ENGINE_H
+#define PHYSICS_ENGINE_H
 
 #include <vector>
 #include <memory>
 
 #include "utils/GameMath.h"
 
-static const float DEFAULT_GRAVITY = -1.0f;
+static const float DEFAULT_GRAVITY = 9.8f;
 
-class PhysicsObject;
+struct PhysicsObject
+{
+    Point2 center;
+    float width;
+    float height;
+    float inverseMass;
+    Vector2f velocity;
+    Vector2f acceleration;
+    void setMass(float mass);
+
+    PhysicsObject(const Point2 & center, float w, float h, float mass = 1.f);
+    PhysicsObject(const Point2 & center, float w, float h, bool isStatic);
+};
 
 class PhysicsEngine
 {
     friend class XCube2Engine;
-    friend class PhysicsObject;
 
-    private:
-        Vector2f gravity;
-       
-        PhysicsEngine();
-        std::vector<std::shared_ptr<PhysicsObject>> objects;
+private:
+    Vector2f gravity;
+    bool doDebug{};
 
+    PhysicsEngine();
+    std::vector<std::shared_ptr<PhysicsObject>> objects;
 
-    public:
-        /**
-        * Note that gravity is naturally a negative value
-        * update interval in seconds
-        */
-        void setGravity(float gravityValue, float worldUpdateInterval);
-        void update();
-    
-        void registerObject(std::shared_ptr<PhysicsObject>);
-        void applyGravity(std::shared_ptr<PhysicsObject>  obj);
-       
+public:
+
+    /**
+     * Set the acceleration due to gravity
+     * Note that gravity is naturally a positive value as the origin for SDL is top-left.
+     * @param gravityValue the acceleration due to gravity on the vertical axis
+     */
+    void setGravity(float gravityValue);
+    /**
+     * Set the acceleration due to gravity.
+     * Note that gravity is naturally a positive value as the origin for SDL is top-left.
+     * @param gravityValue The acceleration due to gravity as a 2D vector.
+     */
+    void setGravity(Vector2f gravityValue);
+
+    /**
+     * Set whether the graphics engine should render debug for all PhysicsObjects
+     * @param value The value to set doDebug to
+     */
+    void setDoDebug(bool value) {doDebug = value;}
+
+    void update(float deltaTime);
+
+    void registerObject(const std::shared_ptr<PhysicsObject>&);
+
+#ifdef __DEBUG
+    void drawDebug();
+#endif
 };
 
-class PhysicsObject
-{
-    friend class GraphicsEngine;
-  
-    protected:
-        Point2 center;
-        float lX, lY, hlX, hlY;    // lengths and half lengths
-        Vector2f force;
-
-        void applyForce(const Vector2f &);
-    public:
-        PhysicsObject(const Point2 & center, float x, float y);
-
-        Point2 getCenter() { return center; }
-        float getLengthX() { return lX; }
-        float getLengthY() { return lY; }
-        float getHalfLengthX() { return hlX; }
-        float getHalfLengthY() { return hlY; }
-        
-        bool isColliding(const PhysicsObject & other);
-        /**
-        * If we have different implementations of engines/gravity
-        * this can be very useful
-        */
-        void applyForceVertical(const float & speed);
-        void applyForceHorizontal(const float & speed);
-        virtual void applyGravity(const std::shared_ptr<PhysicsEngine> & engine);
-   
-        virtual void applyAntiGravity(const PhysicsEngine & engine);
-      
-};
-
-#endif /* PhysicsEngine_hpp */
+#endif
 

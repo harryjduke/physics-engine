@@ -1,38 +1,30 @@
-#pragma once
-//
-//  MyGame.h
-//  GameEngine
-//
-// all code resources are taken from https://github.com/AlmasB/xcube2d/tree/master
-//
+/*
+ * @file MyGame.h
+ * @author Harry
+ * @date 16/05/2024
+ * @copyright (c) 2024 Harry Duke
+ */
 
+#ifndef MY_GAME_H
+#define MY_GAME_H
 
 #include <cstdio>
 #include "AbstractGame.h"
 
-struct GameKey {
-    Point2 pos;
-    bool isAlive{};
-};
-
 class MyGame : public AbstractGame
 {
 private:
-    SDL_Rect box, box2;
-    PhysicsObject physicsObject1, physicsObject2;
-
-    std::vector<std::shared_ptr<GameKey>> gameKeys;
+    std::shared_ptr<PhysicsObject> physicsObject1, physicsObject2;
 
     /* GAMEPLAY */
-    int score, numKeys, lives;
-    bool gameWon;
-
     void handleKeyEvents() override;
-    void update() override;
+    void update(float deltaTime) override;
     void render() override;
     void renderUI();
 public:
     MyGame();
     ~MyGame();
+
 };
 
+#endif

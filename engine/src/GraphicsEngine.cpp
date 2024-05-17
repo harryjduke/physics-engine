@@ -29,7 +29,6 @@ GraphicsEngine::GraphicsEngine() : fpsAverage(0), fpsPrevious(0), fpsStart(0), f
     if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) != IMG_INIT_PNG)
         throw EngineException("Failed to init SDL_image - PNG", IMG_GetError());
 
-
 }
 
 GraphicsEngine::~GraphicsEngine() {
@@ -219,7 +218,7 @@ void GraphicsEngine::drawLine(const Point2& p0, const Point2& p1) {
 }
 
 void GraphicsEngine::drawCircle(const Point2& center, const float& radius) {
-    for (float i = 0.0f; i < 2 * M_PI; i += PI_OVER_180) {
+    for (float i = 0.0f; i < 2 * M_PI; i += PI/180) {
         int x = (int)(center.x + radius * cos(i));
         int y = (int)(center.y + radius * sin(i));
         SDL_RenderDrawPoint(renderer, x, y);
@@ -227,7 +226,7 @@ void GraphicsEngine::drawCircle(const Point2& center, const float& radius) {
 }
 
 void GraphicsEngine::drawEllipse(const Point2& center, const float& radiusX, const float& radiusY) {
-    for (float i = 0.0f; i < 2 * M_PI; i += PI_OVER_180) {
+    for (float i = 0.0f; i < 2 * M_PI; i += PI/180) {
         int x = (int)(center.x + radiusX * cos(i));
         int y = (int)(center.y + radiusY * sin(i));
         SDL_RenderDrawPoint(renderer, x, y);

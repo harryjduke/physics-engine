@@ -14,7 +14,7 @@
 class AbstractGame {
 private:
     void handleMouseEvents();
-    void updatePhysics();
+    void updatePhysics(float deltaTime);
 
 protected:
     AbstractGame();
@@ -30,7 +30,7 @@ protected:
     bool paused;
     double gameTime;
 
-    virtual void update() = 0;
+    virtual void update(float deltaTime) = 0;
     virtual void render() = 0;
 
     //Define input handlers
