@@ -8,16 +8,9 @@
 #include "EventEngine.h"
 
 
-EventEngine::EventEngine() : running(true) {
-    for (int i = 0; i < Key::LAST; ++i) {
-        keys[i] = false;
-    }
+EventEngine::EventEngine() : running(true), event{}, keys{}, buttons{} { }
 
-    buttons[Mouse::BTN_LEFT] = false;
-    buttons[Mouse::BTN_RIGHT] = false;
-}
-
-EventEngine::~EventEngine() {}
+EventEngine::~EventEngine() = default;
 
 void EventEngine::pollEvents() {
     while (SDL_PollEvent(&event)) {
@@ -29,8 +22,8 @@ void EventEngine::pollEvents() {
             keys[QUIT] = true;
         }
 
-        buttons[Mouse::BTN_LEFT] = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
-        buttons[Mouse::BTN_RIGHT] = (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
+        buttons[Mouse::BTN_LEFT] = (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;
+        buttons[Mouse::BTN_RIGHT] = (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
     }
 }
 
@@ -79,14 +72,14 @@ void EventEngine::setMouseRelative(bool b) {
     }
 }
 
-Point2 EventEngine::getMouseDPos() {
-    Point2 mouseDPos;
+Point2i EventEngine::getMouseDPos() {
+    Point2i mouseDPos;
     SDL_GetRelativeMouseState(&mouseDPos.x, &mouseDPos.y);
     return mouseDPos;
 }
 
-Point2 EventEngine::getMousePos() {
-    Point2 pos;
+Point2i EventEngine::getMousePos() {
+    Point2i pos;
     SDL_GetMouseState(&pos.x, &pos.y);
     return pos;
 }

@@ -54,7 +54,7 @@ public:
     void setPressed(Key);
     void setPressed(Mouse);
 
-    void setMouseRelative(bool);
+    static void setMouseRelative(bool);
 
     /**
     * Returns mouse's delta position
@@ -62,12 +62,12 @@ public:
     * previous mouse positions
     *
     */
-    Point2 getMouseDPos();
+    static Point2i getMouseDPos();
 
     /**
     * Returns current mouse position relative to the window
     */
-    Point2 getMousePos();
+    static Point2i getMousePos();
 };
 
 #endif

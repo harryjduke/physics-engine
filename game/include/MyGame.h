@@ -15,6 +15,9 @@ class MyGame : public AbstractGame
 {
 private:
     std::shared_ptr<PhysicsObject> physicsObject1, physicsObject2;
+    double objectSpawnCooldown;
+    double lastSpawnedObjectTime;
+
 
     /* GAMEPLAY */
     void handleKeyEvents() override;
