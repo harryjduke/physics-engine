@@ -96,11 +96,11 @@ public:
     void fillRect(SDL_Rect*);
     void fillRect(const int& x, const int& y, const int& w, const int& h);
 
-    void drawPoint(const Point2&);
-    void drawLine(const Line2i&);
-    void drawLine(const Point2& start, const Point2& end);
-    void drawCircle(const Point2& center, const float& radius);
-    void drawEllipse(const Point2& center, const float& radiusX, const float& radiusY);
+    void drawPoint(const Point2f&);
+    void drawLine(const Line2f&);
+    void drawLine(const Point2f& start, const Point2f& end);
+    void drawCircle(const Point2f& center, const float& radius);
+    void drawEllipse(const Point2f& center, const float& radiusX, const float& radiusY);
     void drawTexture(SDL_Texture*, SDL_Rect* src, SDL_Rect* dst, const double& angle = 0.0, const SDL_Point* center = 0, SDL_RendererFlip flip = SDL_FLIP_NONE);
     void drawTexture(SDL_Texture*, SDL_Rect* dst, SDL_RendererFlip flip = SDL_FLIP_NONE);
 

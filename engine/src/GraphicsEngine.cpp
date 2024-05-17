@@ -205,19 +205,19 @@ void GraphicsEngine::fillRect(const int& x, const int& y, const int& w, const in
     SDL_RenderFillRect(renderer, &rect);
 }
 
-void GraphicsEngine::drawPoint(const Point2& p) {
+void GraphicsEngine::drawPoint(const Point2f& p) {
     SDL_RenderDrawPoint(renderer, p.x, p.y);
 }
 
-void GraphicsEngine::drawLine(const Line2i& line) {
+void GraphicsEngine::drawLine(const Line2f& line) {
     SDL_RenderDrawLine(renderer, line.start.x, line.start.y, line.end.x, line.end.y);
 }
 
-void GraphicsEngine::drawLine(const Point2& p0, const Point2& p1) {
+void GraphicsEngine::drawLine(const Point2f& p0, const Point2f& p1) {
     SDL_RenderDrawLine(renderer, p0.x, p0.y, p1.x, p1.y);
 }
 
-void GraphicsEngine::drawCircle(const Point2& center, const float& radius) {
+void GraphicsEngine::drawCircle(const Point2f& center, const float& radius) {
     for (float i = 0.0f; i < 2 * M_PI; i += PI/180) {
         int x = (int)(center.x + radius * cos(i));
         int y = (int)(center.y + radius * sin(i));
@@ -225,7 +225,7 @@ void GraphicsEngine::drawCircle(const Point2& center, const float& radius) {
     }
 }
 
-void GraphicsEngine::drawEllipse(const Point2& center, const float& radiusX, const float& radiusY) {
+void GraphicsEngine::drawEllipse(const Point2f& center, const float& radiusX, const float& radiusY) {
     for (float i = 0.0f; i < 2 * M_PI; i += PI/180) {
         int x = (int)(center.x + radiusX * cos(i));
         int y = (int)(center.y + radiusY * sin(i));

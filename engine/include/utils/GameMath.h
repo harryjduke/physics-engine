@@ -44,30 +44,41 @@ struct Vector2i {
 	Vector2i(int x, int y) : x(x), y(y) {}
 };
 
-struct Point2 {
-	int x, y;
+struct Point2f {
+	float x, y;
 
-	Point2() : Point2(0, 0) {}
-	Point2(int x, int y) : x(x), y(y) {}
+	Point2f() : Point2f(0, 0) {}
+	Point2f(float x, float y) : x(x), y(y) {}
 
-	Point2& operator+=(const Vector2f& v) {
+	Point2f& operator+=(const Vector2f& v) {
 		x += v.x;
 		y += v.y;
 		return *this;
 	}
 
-	Point2& operator-=(const Vector2f& v) {
+	Point2f& operator-=(const Vector2f& v) {
 		x -= v.x;
 		y -= v.y;
 		return *this;
 	}
 };
 
-struct Line2i {
-	Point2 start, end;
+struct Point2i {
+    int x, y;
 
-	Line2i() : Line2i(Point2(), Point2()) {}
-	Line2i(const Point2& start, const Point2& end) : start(start), end(end) {}
+    Point2i() : Point2i(0, 0) {}
+    Point2i(int x, int y) : x(x), y(y) {}
+
+    explicit operator Point2f() const {
+        return {static_cast<float>(x), static_cast<float>(y)};
+    }
+};
+
+struct Line2f {
+	Point2f start, end;
+
+	Line2f() : Line2f(Point2f(), Point2f()) {}
+	Line2f(const Point2f& start, const Point2f& end) : start(start), end(end) {}
 };
 
 struct Rectangle2 {
@@ -76,11 +87,10 @@ struct Rectangle2 {
 	Rectangle2(int x, int y, int w, int h) : x(x), y(y), w(w), h(h) {}
 
 	SDL_Rect getSDLRect() const {
-		SDL_Rect rect = { x, y, w, h };
-		return rect;
+		return { x, y, w, h };
 	}
 
-	inline bool contains(const Point2& p) {
+	inline bool contains(const Point2f& p) {
 		return p.x >= x && p.x <= x + w
 			&& p.y >= y && p.y <= y + h;
 	}
@@ -92,7 +102,7 @@ struct Rectangle2 {
 		return SDL_HasIntersection(&rect1, &rect2) == SDL_TRUE;
 	}
 
-	inline bool intersects(const Line2i& line) {
+	inline bool intersects(const Line2f& line) {
 		int x1 = line.start.x, y1 = line.start.y, x2 = line.end.x, y2 = line.end.y;
 		SDL_Rect rect = { x, y, w, h };
 		return SDL_IntersectRectAndLine(&rect, &x1, &y1, &x2, &y2) == SDL_TRUE;
@@ -109,7 +119,7 @@ struct Rectangle2f {
 		return rect;
 	}
 
-	inline bool contains(const Point2& p) {
+	inline bool contains(const Point2f& p) {
 		return p.x >= x && p.x <= x + w
 			&& p.y >= y && p.y <= y + h;
 	}
@@ -121,7 +131,7 @@ struct Rectangle2f {
 		return SDL_HasIntersection(&rect1, &rect2) == SDL_TRUE;
 	}
 
-	inline bool intersects(const Line2i& line) {
+	inline bool intersects(const Line2f& line) {
 		int x1 = line.start.x, y1 = line.start.y, x2 = line.end.x, y2 = line.end.y;
 		SDL_Rect rect = { x, y, w, h };
 		return SDL_IntersectRectAndLine(&rect, &x1, &y1, &x2, &y2) == SDL_TRUE;

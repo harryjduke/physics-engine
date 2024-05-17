@@ -10,15 +10,18 @@
 #include <memory>
 
 MyGame::MyGame() : AbstractGame(),
-    physicsObject1(std::make_shared<PhysicsObject>(Point2{45, 45}, 50, 50)),
-    physicsObject2(std::make_shared<PhysicsObject>(Point2{1000, 400}, 2000, 60, true))
+    physicsObject1(std::make_shared<PhysicsObject>(Point2f{45, 45}, 50, 50)),
+    physicsObject2(std::make_shared<PhysicsObject>(Point2f{1000, 400}, 2000, 60, true)),
+    objectSpawnCooldown(.2),
+    lastSpawnedObjectTime{}
 {
+    // Setup graphics engine
     graphicsEngine->setVerticalSync(true);
 
-    physicsEngine->setGravity(98.f);
+    // Setup physics engine
     physicsEngine->setDoDebug(true);
     physicsEngine->registerObject(physicsObject1);
-    //physicsEngine->registerObject(physicsObject2);
+    physicsEngine->registerObject(physicsObject2);
 }
 MyGame::~MyGame() = default;
 
@@ -26,9 +29,10 @@ void MyGame::handleKeyEvents()
 {
     float speed = 3.f;
 
-    if (eventEngine->isPressed(BTN_LEFT))
+    if (eventEngine->isPressed(BTN_LEFT) && gameTime - lastSpawnedObjectTime > objectSpawnCooldown)
     {
-        physicsEngine->registerObject(std::make_shared<PhysicsObject>(eventEngine->getMousePos(), 50, 50));
+        lastSpawnedObjectTime = gameTime;
+        physicsEngine->registerObject(std::make_shared<PhysicsObject>(static_cast<Point2f>(eventEngine->getMousePos()), 50, 50));
     }
 
 }
