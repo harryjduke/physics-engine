@@ -62,9 +62,10 @@ int AbstractGame::runMainLoop() {
         handleMouseEvents();
 
         if (!paused) {
-            update();
-            updatePhysics();
-            gameTime += 0.016;	// 60 times a sec
+            float deltaTime = 0.016;	// 60 times a sec
+            update(deltaTime);
+            updatePhysics(deltaTime);
+            gameTime += deltaTime;
         }
 
         graphicsEngine->clearScreen();
@@ -94,6 +95,6 @@ void AbstractGame::onRightMouseButton() {
 
 }
 
-void AbstractGame::updatePhysics() {
-    physicsEngine->update();
+void AbstractGame::updatePhysics(float deltaTime) {
+    physicsEngine->update(deltaTime);
 }

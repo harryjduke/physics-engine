@@ -1,20 +1,18 @@
 // all code resources are taken from https://github.com/AlmasB/xcube2d/tree/master
-#ifndef __GAME_MATH_H__
-#define __GAME_MATH_H__
+#ifndef GAME_MATH_H
+#define GAME_MATH_H
 
 #include <cstdlib>
-
 #include <SDL_rect.h>
 
-static const float PI_OVER_180 = (float)(3.14159265358979323846 / 180.0f);
-static const float _180_OVER_PI = (float)(180.0f / 3.14159265358979323846);
+static const float PI = 3.14159265358979323846;
 
 inline float toRadians(float deg) {
-	return deg * PI_OVER_180;
+	return deg * PI/180;
 }
 
 inline float toDegrees(float rad) {
-	return rad * _180_OVER_PI;
+	return rad * 180/PI;
 }
 
 struct Vector2f {
@@ -23,6 +21,19 @@ struct Vector2f {
 
 	Vector2f() : Vector2f(0.0f, 0.0f) {}
 	Vector2f(float x, float y) : x(x), y(y) {}
+
+    // Vector2f + Vector2f | OPTIMISE this can be inefficient for more than two vectors
+    Vector2f operator + (const Vector2f& v) const { return {x + v.x, y + v.y}; }
+    // Vector2f - Vector2f | OPTIMISE this can be inefficient for more than two vectors
+    Vector2f operator - (const Vector2f& v) const { return {x - v.x, y - v.y}; }
+
+    // Vector2f += Vector2f
+    Vector2f& operator += (const Vector2f& v) { x += v.x; y += v.y; return *this; }
+    // Vector2f -= Vector2f
+    Vector2f& operator -= (const Vector2f& v) { x -= v.x; y -= v.y; return *this; }
+
+    // Vector2f * float
+    Vector2f operator * (float scalar) const { return {x * scalar, y * scalar}; }
 };
 
 struct Vector2i {
