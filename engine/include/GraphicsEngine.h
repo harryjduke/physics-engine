@@ -12,6 +12,7 @@
 #include <string>
 #include <memory>
 #include <iostream>
+#include <vector>
 //code from xcube 2d
 #include <SDL.h>
 #include <SDL_image.h>
@@ -49,7 +50,11 @@ struct SDL_Colorf
 
 inline SDL_Colorf toSDLColorf(SDL_Color color)
 {
-    SDL_Colorf colorf = { color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f };
+    SDL_Colorf colorf = {
+            static_cast<float>(color.r) / 255.0f,
+            static_cast<float>(color.g) / 255.0f,
+            static_cast<float>(color.b) / 255.0f,
+            static_cast<float>(color.a) / 255.0f };
     return colorf;
 }
 
@@ -78,35 +83,43 @@ public:
     * Clears everything on the screen
     * Call this before drawing anything to screen
     */
-    void clearScreen();
+    void clearScreen() const;
 
     /**
     * Displays everything rendered on the screen
     * Call this method after you have finished drawing
     */
-    void showScreen();
+    static void showScreen();
 
-    void drawRect(const SDL_Rect&);
-    void drawRect(const SDL_Rect&, const SDL_Color&);
+    static void drawRect(const SDL_Rect&);
+    void drawRect(const SDL_Rect&, const SDL_Color&) const;
+    void drawRect(SDL_Rect*, const SDL_Color&) const;
+    static void drawRect(SDL_Rect*);
+    static void drawRect(const int& x, const int& y, const int& w, const int& h);
 
-    void drawRect(SDL_Rect*, const SDL_Color&);
-    void drawRect(SDL_Rect*);
-    void drawRect(const int& x, const int& y, const int& w, const int& h);
+    static void fillRect(SDL_Rect*);
+    static void fillRect(const int& x, const int& y, const int& w, const int& h);
 
-    void fillRect(SDL_Rect*);
-    void fillRect(const int& x, const int& y, const int& w, const int& h);
+    static void drawPoint(const Vector2I &p);
+    static void drawPoint(const Vector2F&);
 
-    void drawPoint(const Point2f&);
-    void drawLine(const Line2f&);
-    void drawLine(const Point2f& start, const Point2f& end);
-    void drawCircle(const Point2f& center, const float& radius);
-    void drawEllipse(const Point2f& center, const float& radiusX, const float& radiusY);
-    void drawTexture(SDL_Texture*, SDL_Rect* src, SDL_Rect* dst, const double& angle = 0.0, const SDL_Point* center = 0, SDL_RendererFlip flip = SDL_FLIP_NONE);
-    void drawTexture(SDL_Texture*, SDL_Rect* dst, SDL_RendererFlip flip = SDL_FLIP_NONE);
+    static void drawLine(const Line2i&);
+    static void drawLine(const Line2f&);
+    static void drawLine(const Vector2I& start, const Vector2I& end);
+    static void drawLine(const Vector2F& start, const Vector2F& end);
+
+    static void drawCircle(const Vector2F& center, const float& radius);
+
+    static void drawEllipse(const Vector2F& center, const float& radiusX, const float& radiusY);
+
+    static void drawPolygon(std::vector<Vector2F> points);
+
+    static void drawTexture(SDL_Texture*, SDL_Rect* src, SDL_Rect* dst, const double& angle = 0.0, const SDL_Point* center = nullptr, SDL_RendererFlip flip = SDL_FLIP_NONE);
+    static void drawTexture(SDL_Texture*, SDL_Rect* dst, SDL_RendererFlip flip = SDL_FLIP_NONE);
 
 
     void setDrawColor(const SDL_Color&);
-    void setDrawScale(const Vector2f&);    // not tested
+    static void setDrawScale(const Vector2F&);    // not tested
 
     /**
     * @param fileName - name of the icon file
@@ -116,7 +129,7 @@ public:
     void setWindowTitle(const char* title);
     void setWindowTitle(const std::string&);
     void setFullscreen(bool);
-    void setVerticalSync(bool);
+    static void setVerticalSync(bool);
 
     /**
     * Shows a message box with given info and title
@@ -139,11 +152,11 @@ public:
     *         since most displays use native (max) resolution
     *         this returns maximum available (the one you can set) window size
     */
-    Dimension2i getMaximumWindowSize();
+    static Dimension2i getMaximumWindowSize();
 
     void setFrameStart();
     void adjustFPSDelay(const Uint32&);
-    Uint32 getAverageFPS();
+    [[nodiscard]] Uint32 getAverageFPS() const;
 
     static SDL_Texture* createTextureFromSurface(SDL_Surface*);
 

@@ -2,8 +2,10 @@
 #ifndef GAME_MATH_H
 #define GAME_MATH_H
 
+#include <cmath>
 #include <cstdlib>
 #include <SDL_rect.h>
+#include <cmath>
 
 static const float PI = 3.14159265358979323846;
 
@@ -15,131 +17,233 @@ inline float toDegrees(float rad) {
 	return rad * 180/PI;
 }
 
-struct Vector2f {
+struct Vector2I;
+struct Vector2F {
 	float x;
 	float y;
 
-	Vector2f() : Vector2f(0.0f, 0.0f) {}
-	Vector2f(float x, float y) : x(x), y(y) {}
+	Vector2F() : Vector2F(0.0f, 0.0f) {}
+	Vector2F(float x, float y) : x(x), y(y) {}
 
-    // Vector2f + Vector2f | OPTIMISE this can be inefficient for more than two vectors
-    Vector2f operator + (const Vector2f& v) const { return {x + v.x, y + v.y}; }
-    // Vector2f - Vector2f | OPTIMISE this can be inefficient for more than two vectors
-    Vector2f operator - (const Vector2f& v) const { return {x - v.x, y - v.y}; }
+    [[nodiscard]] float getMagnitude() const { return sqrtf( powf(x, 2.f) + powf(y, 2.f) ); }
 
-    // Vector2f += Vector2f
-    Vector2f& operator += (const Vector2f& v) { x += v.x; y += v.y; return *this; }
-    // Vector2f -= Vector2f
-    Vector2f& operator -= (const Vector2f& v) { x -= v.x; y -= v.y; return *this; }
+    [[nodiscard]] Vector2F getUnitVector() const { return *this / this->getMagnitude(); }
 
-    // Vector2f * float
-    Vector2f operator * (float scalar) const { return {x * scalar, y * scalar}; }
+    [[nodiscard]] float getDotProduct(Vector2F other) const { return x * other.x + y * other.y; }
+
+    [[nodiscard]] Vector2F rotate(float angleInRads, Vector2F origin = {}) const {
+        // Calculate sine and cosine of the angle
+        float sinAngle = std::sin(angleInRads);
+        float cosAngle = std::cos(angleInRads);
+
+        // Get the vector from the origin to the point
+        Vector2F translatedVector = *this - origin;
+
+        // Rotate the translated point/vector
+        Vector2F rotatedVector{ // Rotate the vector
+            translatedVector.x * cosAngle - translatedVector.y * sinAngle,
+            translatedVector.x * sinAngle - translatedVector.y * cosAngle
+        };
+
+        // Translate the point/vector back to the original position
+        return rotatedVector + origin;
+    }
+
+    // Vector2F to this
+    Vector2F& operator += (const Vector2F& v) { x += v.x; y += v.y; return *this; }
+    Vector2F& operator -= (const Vector2F& v) { x -= v.x; y -= v.y; return *this; }
+    Vector2F& operator *= (const Vector2F& v) { x *= v.x; y *= v.y; return *this; }
+    Vector2F& operator /= (const Vector2F& v) { x /= v.x; y /= v.y; return *this; }
+
+    // Vector2F to Vector2F
+    Vector2F operator + (const Vector2F& v) const { return Vector2F(*this) += v; }
+    Vector2F operator - (const Vector2F& v) const { return Vector2F(*this) -= v; }
+    Vector2F operator * (const Vector2F& v) const { return Vector2F(*this) *= v; }
+    Vector2F operator / (const Vector2F& v) const { return Vector2F(*this) /= v; }
+
+    // Scalar to this
+    Vector2F& operator *= (const float& s) { x *= s; y *= s; return *this; }
+    Vector2F& operator /= (const float& s) { x /= s; y /= s; return *this; }
+
+    //Scalar to Vector2F
+    Vector2F operator * (float s) const { return Vector2F(*this) *= s; }
+    Vector2F operator / (float s) const { return Vector2F(*this) /= s; }
+
+    explicit operator Vector2I() const;
 };
 
-struct Vector2i {
+struct Vector2I {
 	int x;
 	int y;
 
-	Vector2i() : Vector2i(0, 0) {}
-	Vector2i(int x, int y) : x(x), y(y) {}
-};
+	Vector2I() : Vector2I(0, 0) {}
+	Vector2I(int x, int y) : x(x), y(y) {}
 
-struct Point2f {
-	float x, y;
+    [[nodiscard]] float getMagnitude() const
+        { return sqrtf(powf(static_cast<float>(x), 2.f) + powf(static_cast<float>(y), 2.f)); }
 
-	Point2f() : Point2f(0, 0) {}
-	Point2f(float x, float y) : x(x), y(y) {}
+    [[nodiscard]] Vector2F getUnitVector() const { return static_cast<Vector2F>(*this) / this->getMagnitude(); }
 
-	Point2f& operator+=(const Vector2f& v) {
-		x += v.x;
-		y += v.y;
-		return *this;
-	}
+    [[nodiscard]] int getDotProduct(Vector2I other) const { return x * other.x + y * other.y; }
 
-	Point2f& operator-=(const Vector2f& v) {
-		x -= v.x;
-		y -= v.y;
-		return *this;
-	}
-};
+    /* Arithmetic Operators */
 
-struct Point2i {
-    int x, y;
+    // Vector2I to this
+    Vector2I& operator += (const Vector2I& v) { x += v.x; y += v.y; return *this; }
+    Vector2I& operator -= (const Vector2I& v) { x -= v.x; y -= v.y; return *this; }
+    Vector2I& operator /= (const Vector2I& v) { x /= v.x; y /= v.y; return *this; }
+    Vector2I& operator *= (const Vector2I& v) { x *= v.x; y *= v.y; return *this; }
 
-    Point2i() : Point2i(0, 0) {}
-    Point2i(int x, int y) : x(x), y(y) {}
+    // Vector2I to Vector2I
+    Vector2I operator + (const Vector2I& v) const { return Vector2I(*this) += v; }
+    Vector2I operator - (const Vector2I& v) const { return Vector2I(*this) -= v; }
+    Vector2I operator * (const Vector2I& v) const { return Vector2I(*this) *= v; }
+    Vector2I operator / (const Vector2I& v) const { return Vector2I(*this) /= v; }
 
-    explicit operator Point2f() const {
+    // Scalar to this
+    Vector2I& operator *= (const int& s) { x *= s; y *= s; return *this; }
+    Vector2I& operator /= (const int& s) { x /= s; y /= s; return *this; }
+
+    //Scalar to Vector2F
+    Vector2I operator * (int s) const { return Vector2I(*this) *= s; }
+    Vector2I operator / (int s) const { return Vector2I(*this) /= s; }
+
+    explicit operator Vector2F() const {
         return {static_cast<float>(x), static_cast<float>(y)};
     }
 };
 
-struct Line2f {
-	Point2f start, end;
+inline Vector2F::operator Vector2I() const {
+    return {static_cast<int>(x), static_cast<int>(y)};
+}
 
-	Line2f() : Line2f(Point2f(), Point2f()) {}
-	Line2f(const Point2f& start, const Point2f& end) : start(start), end(end) {}
+struct Line2i {
+    Vector2I start, end;
+
+    Line2i() : Line2i(Vector2I(), Vector2I()) {}
+    Line2i(const Vector2I& start, const Vector2I& end) : start(start), end(end) {}
+
+    [[nodiscard]] Vector2I getNormal() const
+    {
+        int dx = end.x - start.x;
+        int dy = end.y - start.y;
+        return {-dy, dx};
+    }
 };
 
-struct Rectangle2 {
+struct Line2f {
+	Vector2F start, end;
+
+	Line2f() : Line2f(Vector2F(), Vector2F()) {}
+	Line2f(const Vector2F& start, const Vector2F& end) : start(start), end(end) {}
+
+    [[nodiscard]] Vector2F getNormal() const
+    {
+        float dx = end.x - start.x;
+        float dy = end.y - start.y;
+        return {-dy, dx};
+    }
+};
+
+struct Rectangle2F;
+struct Rectangle2I {
 	int x, y, w, h;
 
-	Rectangle2(int x, int y, int w, int h) : x(x), y(y), w(w), h(h) {}
+    Rectangle2I() : x(0), y(0), w(0), h(0) {}
+	Rectangle2I(int x, int y, int w, int h) : x(x), y(y), w(w), h(h) {}
 
-	SDL_Rect getSDLRect() const {
+	[[nodiscard]] SDL_Rect getSDLRect() const {
 		return { x, y, w, h };
 	}
 
-	inline bool contains(const Point2f& p) {
+	[[nodiscard]] inline bool contains(const Vector2I& p) const {
 		return p.x >= x && p.x <= x + w
 			&& p.y >= y && p.y <= y + h;
 	}
 
-	inline bool intersects(const Rectangle2& other) {
+	[[nodiscard]] inline bool intersects(const Rectangle2I& other) const {
 		SDL_Rect rect1 = getSDLRect();
 		SDL_Rect rect2 = other.getSDLRect();
 
 		return SDL_HasIntersection(&rect1, &rect2) == SDL_TRUE;
 	}
 
-	inline bool intersects(const Line2f& line) {
+	inline bool intersects(const Line2i& line) {
 		int x1 = line.start.x, y1 = line.start.y, x2 = line.end.x, y2 = line.end.y;
 		SDL_Rect rect = { x, y, w, h };
 		return SDL_IntersectRectAndLine(&rect, &x1, &y1, &x2, &y2) == SDL_TRUE;
 	}
+
+    // Rectangle2I += Vector2I
+    Rectangle2I& operator += (const Vector2I& v) { x += v.x; y += v.y; return *this; }
+    // Rectangle2I -= Vector2I
+    Rectangle2I& operator -= (const Vector2I& v) { x -= v.x; y -= v.y; return *this; }
+
+    // Rectangle2I + Vector2I
+    Rectangle2I operator + (const Vector2I& v) const { return Rectangle2I(*this) += v; }
+    // Rectangle2I - Vector2I
+    Rectangle2I operator - (const Vector2I& v) const { return Rectangle2I(*this) -= v; }
+
+    explicit operator Rectangle2F() const;
+
 };
 
-struct Rectangle2f {
+struct Rectangle2F {
 	float x, y, w, h;
 
-	Rectangle2f(float x, float y, float w, float h) : x(x), y(y), w(w), h(h) {}
+    Rectangle2F() : x(0.f), y(0.f), w(0.f), h(0.f) {}
+	Rectangle2F(float x, float y, float w, float h) : x(x), y(y), w(w), h(h) {}
 
-	SDL_Rect getSDLRect() const {
-		SDL_Rect rect = { x, y, w, h };
+	[[nodiscard]] SDL_FRect getSDLRect() const {
+		SDL_FRect rect = { x, y, w, h };
 		return rect;
 	}
 
-	inline bool contains(const Point2f& p) {
+	[[nodiscard]] inline bool contains(const Vector2F& p) const {
 		return p.x >= x && p.x <= x + w
 			&& p.y >= y && p.y <= y + h;
 	}
 
-	inline bool intersects(const Rectangle2f& other) {
-		SDL_Rect rect1 = getSDLRect();
-		SDL_Rect rect2 = other.getSDLRect();
+	[[nodiscard]] inline bool intersects(const Rectangle2F& other) const {
+		SDL_FRect rect1 = getSDLRect();
+		SDL_FRect rect2 = other.getSDLRect();
 
-		return SDL_HasIntersection(&rect1, &rect2) == SDL_TRUE;
+		return SDL_HasIntersectionF(&rect1, &rect2) == SDL_TRUE;
 	}
 
 	inline bool intersects(const Line2f& line) {
-		int x1 = line.start.x, y1 = line.start.y, x2 = line.end.x, y2 = line.end.y;
-		SDL_Rect rect = { x, y, w, h };
-		return SDL_IntersectRectAndLine(&rect, &x1, &y1, &x2, &y2) == SDL_TRUE;
+		float x1 = line.start.x, y1 = line.start.y, x2 = line.end.x, y2 = line.end.y;
+		SDL_FRect rect = { x, y, w, h };
+		return SDL_IntersectFRectAndLine(&rect, &x1, &y1, &x2, &y2) == SDL_TRUE;
 	}
+
+    // Rectangle2F += Vector2F
+    Rectangle2F& operator += (const Vector2F& v) { x += v.x; y += v.y; return *this; }
+    // Rectangle2F -= Vector2F
+    Rectangle2F& operator -= (const Vector2F& v) { x -= v.x; y -= v.y; return *this; }
+
+    // Rectangle2F + Vector2F
+    Rectangle2F operator + (const Vector2F& v) const { return Rectangle2F(*this) += v; }
+    // Rectangle2F - Vector2F
+    Rectangle2F operator - (const Vector2F& v) const { return Rectangle2F(*this) -= v; }
+
+    explicit operator Rectangle2I() const {
+        return Rectangle2I{static_cast<int>(x),
+                           static_cast<int>(y),
+                           static_cast<int>(w),
+                           static_cast<int>(h)};
+    }
 };
 
-typedef Rectangle2 Rect;
-typedef Rectangle2f Rectf;
+inline Rectangle2I::operator Rectangle2F() const {
+    return Rectangle2F{static_cast<float>(x),
+                       static_cast<float>(y),
+                       static_cast<float>(w),
+                       static_cast<float>(h)};
+}
+
+typedef Rectangle2I Rect;
+typedef Rectangle2F RectF;
 
 struct Dimension2i {
 	int w, h;

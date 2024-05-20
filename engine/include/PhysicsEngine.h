@@ -9,51 +9,71 @@
 static const float DEFAULT_GRAVITY = 980.f; // cm/s
 
 /**
- * @brief A struct containing the data required for a physics based object
- * This object has no functionality and is instead designed to be operated on by the PhysicsEngine. PhysicsObjects must
- * be registered with the PhysicsEngine to be included in the physics simulation
+ * @brief A struct containing the data required for a physics based rigid body.
+ * This struct has no functionality beyond that to interact with it's data and is instead designed to be operated on by
+ * the PhysicsEngine. RigidBodies must be registered with the PhysicsEngine to be included in the physics simulation.
  */
-struct PhysicsObject
+struct RigidBody
 {
-    PhysicsObject(const Point2f & center, float w, float h, float mass = 1.f);
-    PhysicsObject(const Point2f & center, float w, float h, bool isStatic);
+    RigidBody(const Vector2F & center, float width, float height, float mass = 1.f, float rotation = 0.f);
+    RigidBody(const Vector2F & center, float width, float height, bool isStatic, float rotation = 0.f);
+    RigidBody(const Vector2F& center, const std::vector<Vector2F>& vertices, float mass = 1.f);
+    RigidBody(const Vector2F& center, const std::vector<Vector2F>& vertices, bool isStatic);
 
     /** The position of the center of this object relative to the origin (top-left) */
-    Point2f center;
+    Vector2F center;
 
-    /** The width of this object */
-    float width;
+    /** A vector of this RigidBody's vertices stored as positions relative to the RigidBody's center */
+    std::vector<Vector2F> vertices;
 
-    /** The height of this object */
-    float height;
-
-    /** The inverse of this objects mass */
+    /** The inverse of this RigidBody's mass */
     float inverseMass;
 
     /** The current velocity */
-    Vector2f velocity;
+    Vector2F velocity;
 
     /** The current acceleration */
-    Vector2f acceleration;
+    Vector2F acceleration;
 
     /**
-     * Whether this object is currently colliding with another object for testing purposes (to check for collisions
-     * between objects use PhysicsEngine::isColliding)
-     */
-    bool isColliding;
-
-    /**
-     * Set the inverseMass of this object from a (positive, non-zero) mass value
-     * @param mass  the mass to set the object to @attention MUST be greater than zero, any values less than or equal to
+     * Set the inverseMass of this RigidBody from a (positive, non-zero) mass value
+     * @param mass  the mass to set the RigidBody to @attention MUST be greater than zero, any values less than or equal to
      * zero will not be assigned
      */
     void setMass(float mass);
 
     /**
-     * @return A Rectf with the x and y set to the upper left corner of the object and the width and height
-     * set to it's width and height
+     * Perform a rotation on this RigidBody by a given angleRadians, rotating all the vertices around the center
+     * @param angleRadians  The angleRadians in radians to rotate the RigidBody by
      */
-    [[nodiscard]] Rectf getRect() const;
+    void rotate(float angleRadians);
+
+
+    [[nodiscard]] std::vector<Vector2F> getNormals();
+
+    /**
+     * Get an axis-aligned bounding box containing this RigidBody, this is not the exact collision but anything that
+     * does NOT collide with this bounding box will NOT collide with the RigidBody
+     * @return A RectF bounding box containing this RigidBody. Will return a default RectF if there are no vertices to
+     * this RigidBody
+     */
+    [[nodiscard]] RectF getBoundingBox() const;
+
+
+    /**
+     * Gets this RigidBody's vertices relative to the world origin
+     * @return A vector of this RigidBody's vertices relative to the world origin
+     */
+    [[nodiscard]] std::vector<Vector2F> getVerticesWorld() const;
+
+#ifdef __DEBUG
+    /**
+     * DEBUG ONLY
+     * Whether this RigidBody is currently colliding with another RigidBody for testing purposes (to check for
+     * collisions between RigidBodies use PhysicsEngine::isCollidingDEBUG)
+     */
+    bool isCollidingDEBUG;
+#endif
 };
 
 class PhysicsEngine
@@ -73,54 +93,57 @@ public:
      * Note that gravity is naturally a positive value as the origin for SDL is top-left.
      * @param gravityValue  The acceleration due to gravity as a 2D vector.
      */
-    void setGravity(Vector2f gravityValue);
-
-    /**
-     * Set whether the graphics engine should render debug for all PhysicsObjects
-     * @param value The value to set doDebug to
-     */
-    void setDoDebug(bool value) {doDebug = value;}
+    void setGravity(Vector2F gravityValue);
 
     /**
      * Update method that runs the physics simulation to be called every frame from the game. Applies velocity to each
-     * PhysicsObject registered with the PhysicsEngine, applies gravity and handles collisions
+     * RigidBody registered with the PhysicsEngine, applies gravity and handles collisions
      * @param deltaTime  The time (in seconds) since the last frame
      */
     void update(float deltaTime);
 
     /**
-     * Registers the given PhysicsObject with this PhysicsEngine so that it can be included in the physics simulation
-     * @param object  The object to register with this PhysicsEngine
+     * Registers the given RigidBody with this PhysicsEngine so that it can be included in the physics simulation
+     * @param rigidBody  The RigidBody to register with this PhysicsEngine
      */
-    void registerObject(const std::shared_ptr<PhysicsObject>& object);
+    void registerRigidBody(const std::shared_ptr<RigidBody>& rigidBody);
 
     /**
-     * Tests if two objects are currently colliding
-     * @param object1, object2  The objects to check for collision between
-     * @return True if the objects are colliding
+     * Tests if two RigidBodies are currently colliding
+     * @param rigidBody1, rigidBody2  The RigidBodies to check for collision between
+     * @return True if the RigidBodies are colliding
      */
-    static bool isColliding(const std::shared_ptr<PhysicsObject>& object1, const std::shared_ptr<PhysicsObject>& object2);
+    static bool isColliding(const std::shared_ptr<RigidBody>& rigidBody1, const std::shared_ptr<RigidBody>& rigidBody2);
 
 #ifdef __DEBUG
     /**
-     * A method, only run in the Debug build and when doDebug is true, that draws the collisions of all the
-     * PhysicsObjects registered with this PhysicsEngine
+     * Set whether the graphics engine should render debug for all RigidBodies
+     * @param value The value to set doDebugDEBUG to
      */
-    void drawDebug();
+    void setDoDebug(bool value) { doDebugDEBUG = value;}
+
+    /**
+     * DEBUG ONLY
+     * A method, only run in the Debug build and when doDebugDEBUG is true, that draws the collisions of all the
+     * RigidBodies registered with this PhysicsEngine
+     */
+    void drawDebugDEBUG();
 #endif
 
 private:
 
-    /** The acceleration due to gravity to apply to registered PhysicsObjects */
-    Vector2f gravity;
+    /** The acceleration due to gravity to apply to registered RigidBodies */
+    Vector2F gravity;
 
-    /** If true and the build is 'Debug' this PhysicsEngine will draw debug graphics for registered PhysicsObjects */
-    bool doDebug;
+    /** A vector of all registered RigidBodies*/
+    std::vector<std::shared_ptr<RigidBody>> rigidBodies;
 
-    /** A vector of all registered PhysicsObjects*/
-    std::vector<std::shared_ptr<PhysicsObject>> objects;
+    void resolveCollision(std::shared_ptr<RigidBody> rigidBody1, std::shared_ptr<RigidBody> rigidBody2);
 
-    void resolveCollision(std::shared_ptr<PhysicsObject> object1, std::shared_ptr<PhysicsObject> object2);
+#ifdef __DEBUG
+    /** If true and the build is 'Debug' this PhysicsEngine will draw debug graphics for registered RigidBodies */
+    bool doDebugDEBUG;
+#endif
 };
 
 #endif
