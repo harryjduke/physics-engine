@@ -62,12 +62,12 @@ public:
     * previous mouse positions
     *
     */
-    static Point2i getMouseDPos();
+    static Vector2I getMouseDPos();
 
     /**
     * Returns current mouse position relative to the window
     */
-    static Point2i getMousePos();
+    static Vector2I getMousePos();
 };
 
 #endif

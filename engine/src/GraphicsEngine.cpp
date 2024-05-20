@@ -104,18 +104,18 @@ void GraphicsEngine::setWindowSize(const int& w, const int& h) {
 Dimension2i GraphicsEngine::getCurrentWindowSize() {
     int w, h;
     SDL_GetWindowSize(window, &w, &h);
-    return Dimension2i(w, h);
+    return {w, h};
 }
 
 Dimension2i GraphicsEngine::getMaximumWindowSize() {
     SDL_DisplayMode current;
     if (SDL_GetCurrentDisplayMode(0, &current) == 0) {
-        return Dimension2i(current.w, current.h);
+        return {current.w, current.h};
     }
     else {
         std::cout << "Failed to get window data" << std::endl;
         std::cout << "GraphicsEngine::getMaximumWindowSize() -> return (0, 0)" << std::endl;
-        return Dimension2i();
+        return {};
     }
 }
 
@@ -123,7 +123,7 @@ void GraphicsEngine::showInfoMessageBox(const std::string& info, const std::stri
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, title.c_str(), info.c_str(), window);
 }
 
-void GraphicsEngine::clearScreen() {
+void GraphicsEngine::clearScreen() const {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, drawColor.r, drawColor.g, drawColor.b, 255);    // may need to be adjusted for allowing alpha
@@ -150,7 +150,7 @@ void GraphicsEngine::adjustFPSDelay(const Uint32& delay)
     fpsPrevious = fpsCurrent;
 }
 
-Uint32 GraphicsEngine::getAverageFPS() {
+Uint32 GraphicsEngine::getAverageFPS() const {
     return fpsAverage;
 }
 
@@ -160,7 +160,7 @@ SDL_Texture* GraphicsEngine::createTextureFromSurface(SDL_Surface* surf) {
 
 
 
-void GraphicsEngine::setDrawScale(const Vector2f& v) {
+void GraphicsEngine::setDrawScale(const Vector2F& v) {
     SDL_RenderSetScale(renderer, v.x, v.y);
 }
 
@@ -169,11 +169,11 @@ void GraphicsEngine::setDrawScale(const Vector2f& v) {
 
 void GraphicsEngine::drawRect(const SDL_Rect& rect)
 {
-    // const Rectangle2 *p = &rect;
+    // const Rectangle2I *p = &rect;
     SDL_RenderDrawRect(renderer, &rect);
 }
 
-void GraphicsEngine::drawRect(const SDL_Rect& rect, const SDL_Color& color) {
+void GraphicsEngine::drawRect(const SDL_Rect& rect, const SDL_Color& color) const {
 
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
 
@@ -181,7 +181,7 @@ void GraphicsEngine::drawRect(const SDL_Rect& rect, const SDL_Color& color) {
     SDL_SetRenderDrawColor(renderer, drawColor.r, drawColor.g, drawColor.b, 255);
 }
 
-void GraphicsEngine::drawRect(SDL_Rect* rect, const SDL_Color& color) {
+void GraphicsEngine::drawRect(SDL_Rect* rect, const SDL_Color& color) const {
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, 255);
     SDL_RenderDrawRect(renderer, rect);
     SDL_SetRenderDrawColor(renderer, drawColor.r, drawColor.g, drawColor.b, 255);
@@ -205,31 +205,53 @@ void GraphicsEngine::fillRect(const int& x, const int& y, const int& w, const in
     SDL_RenderFillRect(renderer, &rect);
 }
 
-void GraphicsEngine::drawPoint(const Point2f& p) {
+void GraphicsEngine::drawPoint(const Vector2I& p) {
     SDL_RenderDrawPoint(renderer, p.x, p.y);
 }
 
-void GraphicsEngine::drawLine(const Line2f& line) {
+void GraphicsEngine::drawPoint(const Vector2F& p) {
+    SDL_RenderDrawPointF(renderer, p.x, p.y);
+}
+
+void GraphicsEngine::drawLine(const Line2i& line) {
     SDL_RenderDrawLine(renderer, line.start.x, line.start.y, line.end.x, line.end.y);
 }
 
-void GraphicsEngine::drawLine(const Point2f& p0, const Point2f& p1) {
+void GraphicsEngine::drawLine(const Line2f& line) {
+    SDL_RenderDrawLineF(renderer, line.start.x, line.start.y, line.end.x, line.end.y);
+}
+
+void GraphicsEngine::drawLine(const Vector2I& p0, const Vector2I& p1) {
     SDL_RenderDrawLine(renderer, p0.x, p0.y, p1.x, p1.y);
 }
 
-void GraphicsEngine::drawCircle(const Point2f& center, const float& radius) {
+void GraphicsEngine::drawLine(const Vector2F& p0, const Vector2F& p1) {
+    SDL_RenderDrawLineF(renderer, p0.x, p0.y, p1.x, p1.y);
+}
+
+void GraphicsEngine::drawCircle(const Vector2F& center, const float& radius) {
     for (float i = 0.0f; i < 2 * M_PI; i += PI/180) {
-        int x = (int)(center.x + radius * cos(i));
-        int y = (int)(center.y + radius * sin(i));
+        int x = (int)(center.x + radius * std::cos(i));
+        int y = (int)(center.y + radius * std::sin(i));
         SDL_RenderDrawPoint(renderer, x, y);
     }
 }
 
-void GraphicsEngine::drawEllipse(const Point2f& center, const float& radiusX, const float& radiusY) {
+void GraphicsEngine::drawEllipse(const Vector2F& center, const float& radiusX, const float& radiusY) {
     for (float i = 0.0f; i < 2 * M_PI; i += PI/180) {
-        int x = (int)(center.x + radiusX * cos(i));
-        int y = (int)(center.y + radiusY * sin(i));
+        int x = (int)(center.x + radiusX * std::cos(i));
+        int y = (int)(center.y + radiusY * std::sin(i));
         SDL_RenderDrawPoint(renderer, x, y);
+    }
+}
+
+void GraphicsEngine::drawPolygon(std::vector<Vector2F> points) {
+    if (points.size() < 2) return; // There are not enough points to draw a line
+
+    for (auto it = points.begin(); it != points.end(); ++it)
+    {
+        if (std::next(it) != points.end()) drawLine(*it, *std::next(it));
+        else drawLine(*it, *points.begin());
     }
 }
 
@@ -238,6 +260,5 @@ void GraphicsEngine::drawTexture(SDL_Texture* texture, SDL_Rect* src, SDL_Rect* 
 }
 
 void GraphicsEngine::drawTexture(SDL_Texture* texture, SDL_Rect* dst, SDL_RendererFlip flip) {
-    SDL_RenderCopyEx(renderer, texture, 0, dst, 0.0, 0, flip);
+    SDL_RenderCopyEx(renderer, texture, nullptr, dst, 0.0, nullptr, flip);
 }
-

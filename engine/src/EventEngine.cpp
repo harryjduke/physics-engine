@@ -72,14 +72,14 @@ void EventEngine::setMouseRelative(bool b) {
     }
 }
 
-Point2i EventEngine::getMouseDPos() {
-    Point2i mouseDPos;
+Vector2I EventEngine::getMouseDPos() {
+    Vector2I mouseDPos;
     SDL_GetRelativeMouseState(&mouseDPos.x, &mouseDPos.y);
     return mouseDPos;
 }
 
-Point2i EventEngine::getMousePos() {
-    Point2i pos;
+Vector2I EventEngine::getMousePos() {
+    Vector2I pos;
     SDL_GetMouseState(&pos.x, &pos.y);
     return pos;
 }
