@@ -24,6 +24,7 @@ struct Vector2F {
 
 	Vector2F() : Vector2F(0.0f, 0.0f) {}
 	Vector2F(float x, float y) : x(x), y(y) {}
+    explicit Vector2F(float s) : x(s), y(s) {}
 
     [[nodiscard]] float getMagnitude() const { return sqrtf( powf(x, 2.f) + powf(y, 2.f) ); }
 
@@ -48,6 +49,17 @@ struct Vector2F {
         // Translate the point/vector back to the original position
         return rotatedVector + origin;
     }
+
+    /* Arithmetic Operators */
+
+    // Assignment operators
+    //Vector2F & operator = (const Vector2F & v) { x = v.x; y = v.y; return *this; }
+    Vector2F& operator = (const float & s) { x = s; y = s; return *this; }
+    Vector2F& operator - () { x = -x; y = -y; return *this; }
+
+    //equality operators
+    bool operator == (const Vector2F & v) const { return (x == v.x) && (y == v.y); }
+    bool operator != (const Vector2F & v) const { return !(*this == v); }
 
     // Vector2F to this
     Vector2F& operator += (const Vector2F& v) { x += v.x; y += v.y; return *this; }
@@ -87,6 +99,14 @@ struct Vector2I {
     [[nodiscard]] int getDotProduct(Vector2I other) const { return x * other.x + y * other.y; }
 
     /* Arithmetic Operators */
+
+    // Assignment operators
+    Vector2I& operator = (const int & s) { x = s; y = s; return *this; }
+    Vector2I operator - () { x = -x; y = -y; return *this; }
+
+    // Equality operators
+    bool operator == (const Vector2I & v) const { return (x == v.x) && (y == v.y); }
+    bool operator != (const Vector2I & v) const { return !(*this == v); }
 
     // Vector2I to this
     Vector2I& operator += (const Vector2I& v) { x += v.x; y += v.y; return *this; }

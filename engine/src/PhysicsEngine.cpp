@@ -7,14 +7,15 @@
 
 /* PHYSICS OBJECT */
 
-RigidBody::RigidBody(const Vector2F & center, float width, float height, float mass, float rotation) :
+RigidBody::RigidBody(const Vector2F & center, float width, float height, float mass, float rotation, float restitution) :
         center(center),
         vertices{
         {-width / 2, -height / 2},
         {width / 2,  -height / 2},
         {width / 2,  height / 2},
         {-width / 2, height / 2}},
-        inverseMass(mass > 0 ? 1.f/mass : 1.f)
+        inverseMass(mass > 0 ? 1.f/mass : 1.f),
+        restitution(restitution)
 #ifdef __DEBUG
         ,isCollidingDEBUG{}
 #endif
@@ -22,14 +23,15 @@ RigidBody::RigidBody(const Vector2F & center, float width, float height, float m
     rotate(rotation);
 }
 
-RigidBody::RigidBody(const Vector2F & center, float width, float height, bool isStatic, float rotation) :
+RigidBody::RigidBody(const Vector2F & center, float width, float height, bool isStatic, float rotation, float restitution) :
         center(center),
         vertices{
         {-width / 2, -height / 2},
         {width / 2,  -height / 2},
         {width / 2,  height / 2},
         {-width / 2, height / 2}},
-        inverseMass(isStatic ? 0.f : 1.f )
+        inverseMass(isStatic ? 0.f : 1.f ),
+        restitution(restitution)
 #ifdef __DEBUG
         ,isCollidingDEBUG{}
 #endif
@@ -37,19 +39,21 @@ RigidBody::RigidBody(const Vector2F & center, float width, float height, bool is
     rotate(rotation);
 }
 
-RigidBody::RigidBody(const Vector2F& center, const std::vector<Vector2F>& vertices, float mass) :
+RigidBody::RigidBody(const Vector2F& center, const std::vector<Vector2F>& vertices, float mass, float restitution) :
         center(center),
         vertices(vertices),
-        inverseMass(mass > 0 ? 1.f/mass : 1.f)
+        inverseMass(mass > 0 ? 1.f/mass : 1.f),
+        restitution(restitution)
 #ifdef __DEBUG
         ,isCollidingDEBUG{}
 #endif
 {}
 
-RigidBody::RigidBody(const Vector2F& center, const std::vector<Vector2F>& vertices, bool isStatic) :
+RigidBody::RigidBody(const Vector2F& center, const std::vector<Vector2F>& vertices, bool isStatic, float restitution) :
         center(center),
         vertices(vertices),
-        inverseMass(isStatic ? 0.f : 1.f )
+        inverseMass(isStatic ? 0.f : 1.f ),
+        restitution(restitution)
 #ifdef __DEBUG
         ,isCollidingDEBUG{}
 #endif
@@ -155,64 +159,116 @@ void PhysicsEngine::update(float deltaTime)
         for (int j = i + 1; j < rigidBodies.size(); ++j)
         {
             // OPTIMISE: Add broad phase collision test
-            if (isColliding(rigidBodies[i], rigidBodies[j]))
+            if ( resolveCollision(rigidBodies[i], rigidBodies[j])
+                && !(rigidBodies[i] == rigidBodies[0] || rigidBodies[j] == rigidBodies[0]))
             {
 #ifdef __DEBUG
-                rigidBodies[i]->isCollidingDEBUG = true;
-                rigidBodies[j]->isCollidingDEBUG = true;
+                debugQueue.push_back(rigidBodies[i]->getVerticesWorld());
+                debugQueue.push_back(rigidBodies[j]->getVerticesWorld());
 #endif
             }
         }
     }
 }
 
-bool PhysicsEngine::isColliding(const std::shared_ptr<RigidBody>& rigidBody1,
-                                const std::shared_ptr<RigidBody>& rigidBody2)
+Vector2F PhysicsEngine::getCollision( const std::shared_ptr<RigidBody>& rigidBodyA,
+                                      const std::shared_ptr<RigidBody>& rigidBodyB )
 {
-    //return object1->getBoundingBox().intersects(object2->getBoundingBox());
-
-    // Create a vector of all the normals as unit vectors | OPTIMISE filter out any axis with the same gradient
-    std::vector<Vector2F> normals1 = rigidBody1->getNormals();
-    std::vector<Vector2F> normals2 = rigidBody2->getNormals();
+    // Create a vector of all the normals as unit vectors | OPTIMISE: filter out any axis with the same gradient
+    std::vector<Vector2F> normalsA = rigidBodyA->getNormals();
+    std::vector<Vector2F> normalsB = rigidBodyB->getNormals();
     std::vector<Vector2F> axes;
-    axes.insert(axes.end(), normals1.begin(), normals1.end());
-    axes.insert(axes.end(), normals2.begin(), normals2.end());
-    for (auto& axis : axes) axis = axis.getUnitVector();
+    axes.insert(axes.end(), normalsA.begin(), normalsA.end());
+    axes.insert(axes.end(), normalsB.begin(), normalsB.end());
+    for (auto& axis : axes) axis = axis.getUnitVector(); // OPTIMISE: only get the unit vector if it is needed to calculate penetration
+
+    Vector2F penetrationVector{std::numeric_limits<float>::max()};
 
     // Check if the RigidBodies are separated on each axis
     for (auto axis : axes)
     {
-        // Get the min and max projections for rigidBody1
-        std::vector<Vector2F> rigidBody1Vertices = rigidBody1->getVerticesWorld();
-        float rigidBody1MinProjection = rigidBody1Vertices[0].getDotProduct(axis);
-        float rigidBody1MaxProjection = rigidBody1Vertices[0].getDotProduct(axis);
-        for (auto it = rigidBody1Vertices.begin() + 1; it != rigidBody1Vertices.end(); ++it)
+        // Get the min and max projections for rigidBodyA
+        std::vector<Vector2F> rigidBodyAVertices = rigidBodyA->getVerticesWorld();
+        float rigidBodyAMinProjection = rigidBodyAVertices[0].getDotProduct(axis);
+        float rigidBodyAMaxProjection = rigidBodyAVertices[0].getDotProduct(axis);
+        for (auto it = rigidBodyAVertices.begin() + 1; it != rigidBodyAVertices.end(); ++it)
         {
-            rigidBody1MinProjection = std::min(rigidBody1MinProjection, it->getDotProduct(axis));
-            rigidBody1MaxProjection = std::max(rigidBody1MaxProjection, it->getDotProduct(axis));
+            rigidBodyAMinProjection = std::min(rigidBodyAMinProjection, it->getDotProduct(axis));
+            rigidBodyAMaxProjection = std::max(rigidBodyAMaxProjection, it->getDotProduct(axis));
         }
 
-        // Get the min and max projections for rigidBody2
-        std::vector<Vector2F> rigidBody2Vertices = rigidBody2->getVerticesWorld();
-        float rigidBody2MinProjection = rigidBody2Vertices[0].getDotProduct(axis);
-        float rigidBody2MaxProjection = rigidBody2Vertices[0].getDotProduct(axis);
-        for (auto it = rigidBody2Vertices.begin() + 1; it != rigidBody2Vertices.end(); ++it)
+        // Get the min and max projections for rigidBodyB
+        std::vector<Vector2F> rigidBodyBVertices = rigidBodyB->getVerticesWorld();
+        float rigidBodyBMinProjection = rigidBodyBVertices[0].getDotProduct(axis);
+        float rigidBodyBMaxProjection = rigidBodyBVertices[0].getDotProduct(axis);
+        for (auto it = rigidBodyBVertices.begin() + 1; it != rigidBodyBVertices.end(); ++it)
         {
-            rigidBody2MinProjection = std::min(rigidBody2MinProjection, it->getDotProduct(axis));
-            rigidBody2MaxProjection = std::max(rigidBody2MaxProjection, it->getDotProduct(axis));
+            rigidBodyBMinProjection = std::min(rigidBodyBMinProjection, it->getDotProduct(axis));
+            rigidBodyBMaxProjection = std::max(rigidBodyBMaxProjection, it->getDotProduct(axis));
         }
 
-        // If there is a separation on any axis then the RigidBodies cannot be colliding so exit early with false
-        if (rigidBody2MaxProjection < rigidBody1MinProjection || rigidBody1MaxProjection < rigidBody2MinProjection)
-            return false;
+        float penetrationMagnitude{};
+        if (rigidBodyBMaxProjection < rigidBodyAMinProjection || rigidBodyAMaxProjection < rigidBodyBMinProjection)
+            // If there is a separation on any axis then the RigidBodies cannot be colliding so exit early with default Vector2F
+            return Vector2F{};
+        else
+            penetrationMagnitude = std::min(rigidBodyBMaxProjection - rigidBodyAMinProjection,
+                                            rigidBodyAMaxProjection - rigidBodyBMinProjection);
+
+        // Find the penetration with the smallest magnitude to work out how the objects should be separated
+        if (penetrationMagnitude < penetrationVector.getMagnitude()) {
+            penetrationVector = axis * penetrationMagnitude;
+
+            // Multiple axis can give the same result despite not pointing the correct way ( i.e. parallel edges will
+            // have opposite normals along the same axis) so reverse the direction if it is not pointing the right way
+            Vector2F relativeVelocity = rigidBodyA->velocity - rigidBodyB->velocity;
+            if (relativeVelocity.getDotProduct(penetrationVector) > 0.0f) {
+                // Reverse the direction of the penetration vector
+                penetrationVector = -penetrationVector;
+            }
+        }
+
     }
 
-    return true; // There was no separation on any axis so the RigidBodies must be colliding
+    // There was no separation on any axis so the RigidBodies must be colliding, return the smallest penetration
+    return penetrationVector;
 }
 
-void PhysicsEngine::resolveCollision(std::shared_ptr<RigidBody> rigidBody1, std::shared_ptr<RigidBody> rigidBody2)
+bool PhysicsEngine::resolveCollision(const std::shared_ptr<RigidBody>& rigidBodyA, const std::shared_ptr<RigidBody>& rigidBodyB)
 {
+    Vector2F collisionVector = getCollision(rigidBodyA, rigidBodyB);
+    // OPTIMISE: Some values calculated in getCollision can be cached for use here such as the collision normal
 
+    if (collisionVector == Vector2F{}) return false; // No collision
+
+    // Calculate the impulse magnitude (the acceleration to apply to each object to respond to the collision)
+    Vector2F relativeVelocity = rigidBodyA->velocity - rigidBodyB->velocity;
+    float elasticity = std::min(rigidBodyA->restitution, rigidBodyB->restitution);
+    float impulseMagnitude = -(1 + elasticity) * relativeVelocity.getDotProduct(collisionVector.getUnitVector()) /
+                             (rigidBodyA->inverseMass + rigidBodyB->inverseMass);
+    Vector2F impulseVector = collisionVector.getUnitVector() * impulseMagnitude;
+
+    // Calculate how much each RigidBody will be moved to negate the collision based off each RigidBody's mass
+    float massProportionA, massProportionB;
+    float totalInverseMass = rigidBodyA->inverseMass + rigidBodyB->inverseMass;
+    if (rigidBodyA->inverseMass == 0) {
+        massProportionA = 0.0f;
+        massProportionB = 1.0f;
+    } else if (rigidBodyB->inverseMass == 0) {
+        massProportionA = 1.0f;
+        massProportionB = 0.0f;
+    } else {
+        massProportionA = rigidBodyA->inverseMass / totalInverseMass;
+        massProportionB = rigidBodyB->inverseMass / totalInverseMass;
+    }
+
+    // Adjust the positions to negate collision and
+    rigidBodyA->center += collisionVector * massProportionA;
+    rigidBodyA->velocity += impulseVector * rigidBodyA->inverseMass;
+    rigidBodyB->center -= collisionVector * massProportionB;
+    rigidBodyB->velocity -= impulseVector * rigidBodyB->inverseMass;
+
+    return true;
 }
 
 #ifdef __DEBUG
@@ -222,15 +278,22 @@ void PhysicsEngine::drawDebugDEBUG()
     {
         auto graphicsEngine =  XCube2Engine::getInstance()->getGraphicsEngine();
 
-        //int i = 0;
-        for (const auto& rigidBody : rigidBodies)
-        {
+        // Draw all RigidBodies
+        for (const auto& rigidBody : rigidBodies) {
+            // Draw the polygon outline
             graphicsEngine->setDrawColor(SDL_COLOR_RED);
-            if (rigidBody->isCollidingDEBUG) graphicsEngine->setDrawColor(SDL_COLOR_GREEN);
-            //graphicsEngine->drawRect(static_cast<Rectangle2I>(rigidBody->getBoundingBox()).getSDLRect());
-            //graphicsEngine->setDrawColor(SDL_COLOR_AQUA);
             graphicsEngine->drawPolygon(rigidBody->getVerticesWorld());
+            // Draw a + for the center
+            graphicsEngine->drawLine({Vector2F{rigidBody->center.x - 5, rigidBody->center.y},Vector2F{rigidBody->center.x + 5, rigidBody->center.y}});
+            graphicsEngine->drawLine({Vector2F{rigidBody->center.x, rigidBody->center.y - 5},Vector2F{rigidBody->center.x, rigidBody->center.y + 5}});
         }
+        // Draw all shapes in the debugQueue
+        for (const auto& polygon : debugQueue)
+        {
+            graphicsEngine->setDrawColor(SDL_COLOR_GREEN);
+            graphicsEngine->drawPolygon(polygon);
+        }
+        debugQueue.clear();
     }
 }
 #endif
