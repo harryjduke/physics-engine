@@ -13,7 +13,7 @@
 
 MyGame::MyGame() : AbstractGame(),
     physicsObject1(std::make_shared<RigidBody>(Vector2F{45, 45}, 50, 50)),
-    physicsObject2(std::make_shared<RigidBody>(Vector2F{1000, 400}, 2000, 60, true)),
+    physicsObject2(std::make_shared<RigidBody>(Vector2F{1000, 400}, 2000, 60, true, 0.f)),
     objectSpawnCooldown(.2),
     lastSpawnedObjectTime{}
 {
@@ -25,7 +25,7 @@ MyGame::MyGame() : AbstractGame(),
     physicsEngine->setDoDebug(true);
 #endif
     //physicsEngine->registerRigidBody(physicsObject1);
-    //physicsEngine->registerRigidBody(physicsObject2);
+    physicsEngine->registerRigidBody(physicsObject2);
 }
 MyGame::~MyGame() = default;
 
@@ -37,7 +37,7 @@ void MyGame::handleKeyEvents()
     {
         lastSpawnedObjectTime = gameTime;
         physicsEngine->registerRigidBody(std::make_shared<RigidBody>(static_cast<Vector2F>(
-                eventEngine->getMousePos()),50,50,true, getRandom(0, 2*PI)));
+                eventEngine->getMousePos()),50,50,false, getRandom(0, 2.f*PI)));
     }
 
 }

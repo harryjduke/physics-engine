@@ -15,10 +15,10 @@ static const float DEFAULT_GRAVITY = 980.f; // cm/s
  */
 struct RigidBody
 {
-    RigidBody(const Vector2F & center, float width, float height, float mass = 1.f, float rotation = 0.f);
-    RigidBody(const Vector2F & center, float width, float height, bool isStatic, float rotation = 0.f);
-    RigidBody(const Vector2F& center, const std::vector<Vector2F>& vertices, float mass = 1.f);
-    RigidBody(const Vector2F& center, const std::vector<Vector2F>& vertices, bool isStatic);
+    RigidBody(const Vector2F & center, float width, float height, float mass = 1.f, float rotation = 0.f, float restitution = 0.5f);
+    RigidBody(const Vector2F & center, float width, float height, bool isStatic, float rotation = 0.f, float restitution = 0.5f);
+    RigidBody(const Vector2F& center, const std::vector<Vector2F>& vertices, float mass = 1.f, float restitution = 0.5f);
+    RigidBody(const Vector2F& center, const std::vector<Vector2F>& vertices, bool isStatic, float restitution = 0.5f);
 
     /** The position of the center of this object relative to the origin (top-left) */
     Vector2F center;
@@ -28,6 +28,9 @@ struct RigidBody
 
     /** The inverse of this RigidBody's mass */
     float inverseMass;
+
+    /** The restitution (or bounciness) of this RigidBody */
+    float restitution;
 
     /** The current velocity */
     Vector2F velocity;
@@ -109,11 +112,13 @@ public:
     void registerRigidBody(const std::shared_ptr<RigidBody>& rigidBody);
 
     /**
-     * Tests if two RigidBodies are currently colliding
-     * @param rigidBody1, rigidBody2  The RigidBodies to check for collision between
-     * @return True if the RigidBodies are colliding
+     * Tests if two RigidBodies are currently colliding and returns the collision vector or zero if there was no
+     * collision
+     * @param rigidBodyA, rigidBodyB  The RigidBodies to check for collision between
+     * @return The collision vector with the direction being the collision normal and the magnitude being the
+     * penetration depth. Zero if there was no collision
      */
-    static bool isColliding(const std::shared_ptr<RigidBody>& rigidBody1, const std::shared_ptr<RigidBody>& rigidBody2);
+    static Vector2F getCollision(const std::shared_ptr<RigidBody>& rigidBodyA, const std::shared_ptr<RigidBody>& rigidBodyB);
 
 #ifdef __DEBUG
     /**
@@ -138,12 +143,24 @@ private:
     /** A vector of all registered RigidBodies*/
     std::vector<std::shared_ptr<RigidBody>> rigidBodies;
 
-    void resolveCollision(std::shared_ptr<RigidBody> rigidBody1, std::shared_ptr<RigidBody> rigidBody2);
+    /**
+     * Tests for a collision (with PhysicsEngine::getCollision) between the two given RigidBodies and, if they are
+     * colliding, move them apart to negate the overlap and apply a velocity to each based on the restitution of the
+     * RigidBodies
+     * @param rigidBodyA, rigidBodyB  The RigidBodies to resolve a collision between
+     * @return  True if a collision was resolved, false if there was no collision
+     */
+    static bool resolveCollision(const std::shared_ptr<RigidBody>& rigidBodyA,
+                                 const std::shared_ptr<RigidBody>& rigidBodyB);
 
 #ifdef __DEBUG
     /** If true and the build is 'Debug' this PhysicsEngine will draw debug graphics for registered RigidBodies */
     bool doDebugDEBUG;
+
+    /** Polygons (as vector<Vector2F) put in this vector will be rendered on the next frame and removed */
+    std::vector<std::vector<Vector2F>> debugQueue;
 #endif
+
 };
 
 #endif
