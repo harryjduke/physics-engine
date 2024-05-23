@@ -14,7 +14,7 @@ RigidBody::RigidBody(const Vector2F & center, float width, float height, float m
         {width / 2,  -height / 2},
         {width / 2,  height / 2},
         {-width / 2, height / 2}},
-        inverseMass(mass > 0 ? 1.f/mass : 1.f),
+        inverseMass(mass != 0 ? 1.f/mass : 1.f),
         restitution(restitution)
 #ifdef __DEBUG
         ,isCollidingDEBUG{}
@@ -147,9 +147,13 @@ void PhysicsEngine::update(float deltaTime)
         if (rigidBody->inverseMass != 0) // If the rigidBody is not static
             rigidBody->acceleration += gravity;
 
-        // Update velocity (v = u + at)
+        // Update velocity using Euler integration.
+        // v(n+1) = v(n) + h * a(n) where n is the previous frame, n+1 is this frame and h is delta time
+        // This is an approximation that assumes the acceleration is constant over this frame
         rigidBody->velocity += rigidBody->acceleration * deltaTime;
-        // Update position (s = ut)
+        // Update position using Euler integration.
+        // r(n+1) = r(n) + h * v(n) where n is the previous frame, n+1 is this frame and h is delta time
+        // This is an approximation that assumes the velocity is constant over this frame
         rigidBody->center += rigidBody->velocity * deltaTime;
     }
 
@@ -223,7 +227,6 @@ Vector2F PhysicsEngine::getCollision( const std::shared_ptr<RigidBody>& rigidBod
             // have opposite normals along the same axis) so reverse the direction if it is not pointing the right way
             Vector2F relativeVelocity = rigidBodyA->velocity - rigidBodyB->velocity;
             if (relativeVelocity.getDotProduct(penetrationVector) > 0.0f) {
-                // Reverse the direction of the penetration vector
                 penetrationVector = -penetrationVector;
             }
         }
@@ -234,7 +237,8 @@ Vector2F PhysicsEngine::getCollision( const std::shared_ptr<RigidBody>& rigidBod
     return penetrationVector;
 }
 
-bool PhysicsEngine::resolveCollision(const std::shared_ptr<RigidBody>& rigidBodyA, const std::shared_ptr<RigidBody>& rigidBodyB)
+bool PhysicsEngine::resolveCollision(const std::shared_ptr<RigidBody>& rigidBodyA,
+                                     const std::shared_ptr<RigidBody>& rigidBodyB)
 {
     Vector2F collisionVector = getCollision(rigidBodyA, rigidBodyB);
     // OPTIMISE: Some values calculated in getCollision can be cached for use here such as the collision normal
@@ -245,27 +249,21 @@ bool PhysicsEngine::resolveCollision(const std::shared_ptr<RigidBody>& rigidBody
     Vector2F relativeVelocity = rigidBodyA->velocity - rigidBodyB->velocity;
     float elasticity = std::min(rigidBodyA->restitution, rigidBodyB->restitution);
     float impulseMagnitude = -(1 + elasticity) * relativeVelocity.getDotProduct(collisionVector.getUnitVector()) /
-                             (rigidBodyA->inverseMass + rigidBodyB->inverseMass);
+                                            (rigidBodyA->inverseMass + rigidBodyB->inverseMass);
+
     Vector2F impulseVector = collisionVector.getUnitVector() * impulseMagnitude;
 
-    // Calculate how much each RigidBody will be moved to negate the collision based off each RigidBody's mass
-    float massProportionA, massProportionB;
-    float totalInverseMass = rigidBodyA->inverseMass + rigidBodyB->inverseMass;
-    if (rigidBodyA->inverseMass == 0) {
-        massProportionA = 0.0f;
-        massProportionB = 1.0f;
-    } else if (rigidBodyB->inverseMass == 0) {
-        massProportionA = 1.0f;
-        massProportionB = 0.0f;
-    } else {
-        massProportionA = rigidBodyA->inverseMass / totalInverseMass;
-        massProportionB = rigidBodyB->inverseMass / totalInverseMass;
-    }
+    // Calculate how much each RigidBody will be moved to negate the collision based off each RigidBody's velocity
+    float totalVelocityMagnitude = rigidBodyA->velocity.getMagnitude() + rigidBodyB->velocity.getMagnitude();
+    float velocityProportionA = (totalVelocityMagnitude != 0) ? rigidBodyA->velocity.getMagnitude() /
+                                                                    totalVelocityMagnitude : 0.5f;
+    float velocityProportionB = (totalVelocityMagnitude != 0) ? rigidBodyB->velocity.getMagnitude() /
+                                                                   totalVelocityMagnitude : 0.5f;
 
-    // Adjust the positions to negate collision and
-    rigidBodyA->center += collisionVector * massProportionA;
+    // Adjust the positions to negate collision and respond to it
+    rigidBodyA->center += collisionVector * velocityProportionA;
     rigidBodyA->velocity += impulseVector * rigidBodyA->inverseMass;
-    rigidBodyB->center -= collisionVector * massProportionB;
+    rigidBodyB->center -= collisionVector * velocityProportionB;
     rigidBodyB->velocity -= impulseVector * rigidBodyB->inverseMass;
 
     return true;
