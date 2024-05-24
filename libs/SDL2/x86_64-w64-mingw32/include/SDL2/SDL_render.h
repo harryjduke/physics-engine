@@ -1416,7 +1416,7 @@ extern DECLSPEC int SDLCALL SDL_RenderCopy(SDL_Renderer * renderer,
  * rotation and flipping.
  *
  * Copy a portion of the texture to the current rendering target, optionally
- * rotating it by angle around the given center and also flipping it
+ * rotating it by angle around the given centerOfMass and also flipping it
  * top-bottom and/or left-right.
  *
  * The texture is blended with the destination based on its blend mode set
@@ -1629,9 +1629,9 @@ extern DECLSPEC int SDLCALL SDL_RenderCopyExF(SDL_Renderer * renderer,
  * \param renderer The rendering context.
  * \param texture (optional) The SDL texture to use.
  * \param vertices Vertices.
- * \param num_vertices Number of vertices.
- * \param indices (optional) An array of integer indices into the 'vertices'
- *                array, if NULL all vertices will be rendered in sequential
+ * \param num_vertices Number of collisionMesh.
+ * \param indices (optional) An array of integer indices into the 'collisionMesh'
+ *                array, if NULL all collisionMesh will be rendered in sequential
  *                order.
  * \param num_indices Number of indices.
  * \return 0 on success, or -1 if the operation is not supported
@@ -1659,9 +1659,9 @@ extern DECLSPEC int SDLCALL SDL_RenderGeometry(SDL_Renderer *renderer,
  * \param color_stride Byte size to move from one element to the next element
  * \param uv Vertex normalized texture coordinates
  * \param uv_stride Byte size to move from one element to the next element
- * \param num_vertices Number of vertices.
- * \param indices (optional) An array of indices into the 'vertices' arrays,
- *                if NULL all vertices will be rendered in sequential order.
+ * \param num_vertices Number of collisionMesh.
+ * \param indices (optional) An array of indices into the 'collisionMesh' arrays,
+ *                if NULL all collisionMesh will be rendered in sequential order.
  * \param num_indices Number of indices.
  * \param size_indices Index size: 1 (byte), 2 (short), 4 (int)
  * \return 0 on success, or -1 if the operation is not supported

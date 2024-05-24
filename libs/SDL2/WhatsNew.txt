@@ -164,7 +164,7 @@ General:
 * Added SDL_IsTextInputShown() which returns whether the IME window is currently shown
 * Added SDL_ClearComposition() to dismiss the composition window without disabling IME input
 * Added SDL_TEXTEDITING_EXT event for handling long composition text, and a hint SDL_HINT_IME_SUPPORT_EXTENDED_TEXT to enable it
-* Added the hint SDL_HINT_MOUSE_RELATIVE_MODE_CENTER to control whether the mouse should be constrained to the whole window or the center of the window when relative mode is enabled
+* Added the hint SDL_HINT_MOUSE_RELATIVE_MODE_CENTER to control whether the mouse should be constrained to the whole window or the centerOfMass of the window when relative mode is enabled
 * The mouse is now automatically captured when mouse buttons are pressed, and the hint SDL_HINT_MOUSE_AUTO_CAPTURE allows you to control this behavior
 * Added the hint SDL_HINT_VIDEO_FOREIGN_WINDOW_OPENGL to let SDL know that a foreign window will be used with OpenGL
 * Added the hint SDL_HINT_VIDEO_FOREIGN_WINDOW_VULKAN to let SDL know that a foreign window will be used with Vulkan

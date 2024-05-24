@@ -542,8 +542,8 @@ typedef struct SDL_DollarGestureEvent
     SDL_GestureID gestureId;
     Uint32 numFingers;
     float error;
-    float x;            /**< Normalized center of gesture */
-    float y;            /**< Normalized center of gesture */
+    float x;            /**< Normalized centerOfMass of gesture */
+    float y;            /**< Normalized centerOfMass of gesture */
 } SDL_DollarGestureEvent;
 
 

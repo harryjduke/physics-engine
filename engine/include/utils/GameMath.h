@@ -30,7 +30,14 @@ struct Vector2F {
 
     [[nodiscard]] Vector2F getUnitVector() const { return *this / this->getMagnitude(); }
 
-    [[nodiscard]] float getDotProduct(Vector2F other) const { return x * other.x + y * other.y; }
+    [[nodiscard]] float dot(Vector2F other) const { return x * other.x + y * other.y; }
+
+    [[nodiscard]] float cross(Vector2F other) const { return x * other.y - other.x * y; }
+
+    [[nodiscard]] float getDistanceTo(Vector2F other) const
+    {
+        return std::sqrt( powf(other.x - x, 2) + powf(other.y - y, 2) );
+    }
 
     [[nodiscard]] Vector2F rotate(float angleInRads, Vector2F origin = {}) const {
         // Calculate sine and cosine of the angle
@@ -74,10 +81,14 @@ struct Vector2F {
     Vector2F operator / (const Vector2F& v) const { return Vector2F(*this) /= v; }
 
     // Scalar to this
+    Vector2F& operator += (const float& s) { x += s; y += s; return *this; }
+    Vector2F& operator -= (const float& s) { x -= s; y -= s; return *this; }
     Vector2F& operator *= (const float& s) { x *= s; y *= s; return *this; }
     Vector2F& operator /= (const float& s) { x /= s; y /= s; return *this; }
 
     //Scalar to Vector2F
+    Vector2F operator + (float s) const { return Vector2F(*this) += s; }
+    Vector2F operator - (float s) const { return Vector2F(*this) -= s; }
     Vector2F operator * (float s) const { return Vector2F(*this) *= s; }
     Vector2F operator / (float s) const { return Vector2F(*this) /= s; }
 
@@ -96,7 +107,14 @@ struct Vector2I {
 
     [[nodiscard]] Vector2F getUnitVector() const { return static_cast<Vector2F>(*this) / this->getMagnitude(); }
 
-    [[nodiscard]] int getDotProduct(Vector2I other) const { return x * other.x + y * other.y; }
+    [[nodiscard]] int dot(Vector2I other) const { return x * other.x + y * other.y; }
+
+    [[nodiscard]] int cross(Vector2I other) const { return x * other.y - other.x * y; }
+
+    [[nodiscard]] float getDistanceTo(Vector2I other) const
+    {
+        return sqrtf( powf(static_cast<float>(other.x - x), 2) + powf(static_cast<float>(other.y - y), 2));
+    }
 
     /* Arithmetic Operators */
 
@@ -111,14 +129,10 @@ struct Vector2I {
     // Vector2I to this
     Vector2I& operator += (const Vector2I& v) { x += v.x; y += v.y; return *this; }
     Vector2I& operator -= (const Vector2I& v) { x -= v.x; y -= v.y; return *this; }
-    Vector2I& operator /= (const Vector2I& v) { x /= v.x; y /= v.y; return *this; }
-    Vector2I& operator *= (const Vector2I& v) { x *= v.x; y *= v.y; return *this; }
 
     // Vector2I to Vector2I
     Vector2I operator + (const Vector2I& v) const { return Vector2I(*this) += v; }
     Vector2I operator - (const Vector2I& v) const { return Vector2I(*this) -= v; }
-    Vector2I operator * (const Vector2I& v) const { return Vector2I(*this) *= v; }
-    Vector2I operator / (const Vector2I& v) const { return Vector2I(*this) /= v; }
 
     // Scalar to this
     Vector2I& operator *= (const int& s) { x *= s; y *= s; return *this; }

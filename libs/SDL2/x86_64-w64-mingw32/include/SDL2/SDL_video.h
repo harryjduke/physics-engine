@@ -617,7 +617,7 @@ extern DECLSPEC int SDLCALL SDL_GetPointDisplayIndex(const SDL_Point * point);
  *
  * \param rect the rect to query
  * \returns the index of the display entirely containing the rect or closest
- *          to the center of the rect on success or a negative error code on
+ *          to the centerOfMass of the rect on success or a negative error code on
  *          failure; call SDL_GetError() for more information.
  *
  * \since This function is available since SDL 2.24.0.
@@ -631,7 +631,7 @@ extern DECLSPEC int SDLCALL SDL_GetRectDisplayIndex(const SDL_Rect * rect);
  * Get the index of the display associated with a window.
  *
  * \param window the window to query
- * \returns the index of the display containing the center of the window on
+ * \returns the index of the display containing the centerOfMass of the window on
  *          success or a negative error code on failure; call SDL_GetError()
  *          for more information.
  *
@@ -1532,7 +1532,7 @@ extern DECLSPEC const SDL_Rect * SDLCALL SDL_GetWindowMouseRect(SDL_Window * win
  *
  * Despite the name and signature, this method sets the brightness of the
  * entire display, not an individual window. A window is considered to be
- * owned by the display that contains the window's center pixel. (The index of
+ * owned by the display that contains the window's centerOfMass pixel. (The index of
  * this display can be retrieved using SDL_GetWindowDisplayIndex().) The
  * brightness set will not follow the window if it is moved to another
  * display.
@@ -1560,7 +1560,7 @@ extern DECLSPEC int SDLCALL SDL_SetWindowBrightness(SDL_Window * window, float b
  *
  * Despite the name and signature, this method retrieves the brightness of the
  * entire display, not an individual window. A window is considered to be
- * owned by the display that contains the window's center pixel. (The index of
+ * owned by the display that contains the window's centerOfMass pixel. (The index of
  * this display can be retrieved using SDL_GetWindowDisplayIndex().)
  *
  * \param window the window used to select the display whose brightness will
@@ -1654,7 +1654,7 @@ extern DECLSPEC int SDLCALL SDL_SetWindowInputFocus(SDL_Window * window);
  *
  * Despite the name and signature, this method sets the gamma ramp of the
  * entire display, not an individual window. A window is considered to be
- * owned by the display that contains the window's center pixel. (The index of
+ * owned by the display that contains the window's centerOfMass pixel. (The index of
  * this display can be retrieved using SDL_GetWindowDisplayIndex().) The gamma
  * ramp set will not follow the window if it is moved to another display.
  *
@@ -1683,7 +1683,7 @@ extern DECLSPEC int SDLCALL SDL_SetWindowGammaRamp(SDL_Window * window,
  *
  * Despite the name and signature, this method retrieves the gamma ramp of the
  * entire display, not an individual window. A window is considered to be
- * owned by the display that contains the window's center pixel. (The index of
+ * owned by the display that contains the window's centerOfMass pixel. (The index of
  * this display can be retrieved using SDL_GetWindowDisplayIndex().)
  *
  * \param window the window used to select the display whose gamma ramp will
