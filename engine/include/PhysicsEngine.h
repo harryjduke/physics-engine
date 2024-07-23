@@ -23,12 +23,6 @@ struct RigidBody
     /** The position of the centerOfMass of mass of this object relative to the origin (top-left) */
     Vector2F centerOfMass;
 
-    /** The Moment of inertia at the centerOfMass of mass */
-    float momentOfInertia;
-
-    /** A vector of this RigidBody's collisionMesh stored as positions relative to the RigidBody's centerOfMass */
-    std::vector<Vector2F> collisionMesh;
-
     /** The inverse of this RigidBody's mass */
     float inverseMass;
 
@@ -55,12 +49,34 @@ struct RigidBody
     void setMass(float mass);
 
     /**
+     * Gets the collisionMesh polygon as a vector of Vector2F vertices
+     * @return  The collisionMesh polygon as a vector of Vector2F vertices
+     */
+    [[nodiscard]] const std::vector<Vector2F> &getCollisionMesh() const;
+
+    /**
+     * Set the collision mesh to the given vector of Vector2F, adjusting the mesh to be relative to the centroid of the
+     * shape (with the centroid at (0, 0))
+     * @param newCollisionMesh
+     */
+    void setCollisionMesh(std::vector<Vector2F> newCollisionMesh);
+
+    /**
+     * Gets the rotational (area) moment of inertia of the collisionMesh at the center of mass
+     * @return The rotational (area) moment of inertia of the collisionMesh at the center of mass
+     */
+    [[nodiscard]] float getMomentOfInertia() const;
+
+    /**
      * Perform a rotation on this RigidBody by a given angleRadians, rotating all the collisionMesh around the centerOfMass
      * @param angleRadians  The angleRadians in radians to rotate the RigidBody by
      */
     void rotate(float angleRadians);
 
-
+    /**
+     * Get the normals of each of the edges of the collisionMesh
+     * @return  A vector of Vector2F representing to the normals of each of the sides of the collisionMesh
+     */
     [[nodiscard]] std::vector<Vector2F> getNormals();
 
     /**
@@ -71,19 +87,18 @@ struct RigidBody
      */
     [[nodiscard]] RectF getBoundingBox() const;
 
-
     /**
      * Gets this RigidBody's collisionMesh relative to the world origin
      * @return A vector of this RigidBody's collisionMesh relative to the world origin
      */
     [[nodiscard]] std::vector<Vector2F> getCollisionMeshWorld() const;
 
-    [[nodiscard]] int GetSupportPoints(const Vector2F& Dir, Vector2F* support);
-
-    static int getContactPoints(Vector2F* supportA, int numA, Vector2F* supportB, int numB, Vector2F contactA, Vector2F contactB);
-
 private:
-     static int GetContactPoints_VertexVertex(const Vector2F& PA, const Vector2F& PB, Vector2F contactA, Vector2F contactB);
+    /** A vector of this RigidBody's collisionMesh stored as positions relative to the RigidBody's centerOfMass */
+    std::vector<Vector2F> collisionMesh;
+
+    /** The Moment of inertia at the centerOfMass of mass */
+    float momentOfInertia;
 
 #ifdef __DEBUG
 public:
@@ -120,6 +135,7 @@ public:
         Vector2F collisionPoint;
         bool isColliding;
     };
+
     /**
      * Tests if two RigidBodies are currently colliding and returns the collision vector or zero if there was no
      * collision
@@ -129,7 +145,24 @@ public:
      */
     static CollisionInfo getCollision(const std::shared_ptr<RigidBody>& rigidBodyA, const std::shared_ptr<RigidBody>& rigidBodyB);
 
-    static float calculateMomentOfInertia(const std::vector<Vector2F>& collisionMesh, float mass);
+    /**
+     * Calculates the centroid (center of mass) of an arbitrary polygon with more that three vertices defined by a
+     * vector of Vector2F vertices
+     * @param polygonVertices The vector of Vector2F vertices that represents the polygon for the centroid to be
+     * calculated for, must contain more than three vertices
+     * @return A Vector2F position of the centroid of the given polygon
+     */
+    static Vector2F calculateCentroid(const std::vector<Vector2F>& polygonVertices);
+
+    /**
+     * Calculates the rotational (mass) moment of inertia for an arbitrary polygon with more than three vertices and a
+     * non-zero area, defined by a vector of Vector2F vertices
+     * @param polygonVertices The vector of Vector2F vertices that represents the polygon for the moment of inertia to
+     * be calculated for, must contain more than three vertices and the polygon must have a non-zero area
+     * @param inverseMass The inverse of the mass of they polygon
+     * @return A float representing the rotational (mass) moment of inertia of the given polygon
+     */
+    static float calculateMomentOfInertia(const std::vector<Vector2F>& polygonVertices, float inverseMass);
 
     /**
      * Set the acceleration due to gravity
@@ -163,11 +196,6 @@ private:
     static bool resolveCollision(const std::shared_ptr<RigidBody>& rigidBodyA,
                                  const std::shared_ptr<RigidBody>& rigidBodyB);
 
-    float area(const Vector2F& p1, const Vector2F& p2, const Vector2F& p3);
-    float triangleMomentOfInertia(const Vector2F& p1, const Vector2F& p2, const Vector2F& p3, float mass);
-
-        // Helper function to clip polygon against a plane
-    std::vector<Vector2F> clipPolygon(const std::vector<Vector2F>& polygon, const Vector2F& planeNormal, const Vector2F& planePoint);
 #ifdef __DEBUG
 public:
     /**
