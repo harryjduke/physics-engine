@@ -26,19 +26,58 @@ struct Vector2F {
 	Vector2F(float x, float y) : x(x), y(y) {}
     explicit Vector2F(float s) : x(s), y(s) {}
 
+    /**
+     * Get the magnitude of this Vector2F (the scalar distance represented by the Vector2F)
+     * @return  The magnitude of this Vector2F
+     */
     [[nodiscard]] float getMagnitude() const { return sqrtf( powf(x, 2.f) + powf(y, 2.f) ); }
 
+    /**
+     * Get the unit vector of this Vector2F (the vector with the same direction but a magnitude of 1)
+     * @return  The unit vector of this Vector2F
+     */
     [[nodiscard]] Vector2F getUnitVector() const { return *this / this->getMagnitude(); }
 
+    /**
+     * Get the dot product of this Vector2F and the other, given Vector2F
+     * @param other The Vector2F to get the dot product of with this Vector2F
+     * @return  The dot product of this Vector2F and the other, given Vector2F
+     */
     [[nodiscard]] float dot(Vector2F other) const { return x * other.x + y * other.y; }
 
+    /**
+     * Get the magnitude of the cross product of this Vector2F and the other, given Vector2F
+     * @param other The Vector2F to get the cross product of with this Vector2F
+     * @return  The magnitude of the cross product of this Vector2F and the other, given Vector2F
+     */
     [[nodiscard]] float cross(Vector2F other) const { return x * other.y - other.x * y; }
 
+    /**
+     * Get the scalar distance from this Vector2F to the other, given Vector2F
+     * @param other The Vector2F to get the distance to from this Vector2F
+     * @return  The scalar distance from this Vector2F to the other, given Vector2F
+     */
     [[nodiscard]] float getDistanceTo(Vector2F other) const
     {
         return std::sqrt( powf(other.x - x, 2) + powf(other.y - y, 2) );
     }
 
+    /**
+     * Get the scalar distance squared from this Vector2F to the other, given Vector2F
+     * @param other The Vector2F to get the distance squared to from this Vector2F
+     * @return  The scalar distance squared from this Vector2F to the other, given Vector2F
+     */
+    [[nodiscard]] float getDistanceSquaredTo(Vector2F other) const
+    {
+        return powf(other.x - x, 2) + powf(other.y - y, 2);
+    }
+
+    /**
+     * Get the Vector2F from rotating this Vector2F clockwise round a given origin by a given angle in radians
+     * @param angleInRads The angle in radians to rotate this Vector2F by
+     * @param origin The origin to rotate this Vector2F around
+     * @return The Vector2F given from rotating this Vector2F clockwise round a given origin by a given angle in radians
+     */
     [[nodiscard]] Vector2F rotate(float angleInRads, Vector2F origin = {}) const {
         // Calculate sine and cosine of the angle
         float sinAngle = std::sin(angleInRads);
@@ -101,19 +140,55 @@ struct Vector2I {
 
 	Vector2I() : Vector2I(0, 0) {}
 	Vector2I(int x, int y) : x(x), y(y) {}
+    explicit Vector2I(int s) : x(s), y(s) {}
 
+    static Vector2I zero() { return Vector2I{}; }
+
+    /**
+     * Get the magnitude of this Vector2I (the scalar distance represented by the Vector2I)
+     * @return  The magnitude of this Vector2I
+     */
     [[nodiscard]] float getMagnitude() const
         { return sqrtf(powf(static_cast<float>(x), 2.f) + powf(static_cast<float>(y), 2.f)); }
 
+    /**
+    * Get the unit vector of this Vector2I (the vector with the same direction but a magnitude of 1)
+    * @return  The unit vector of this Vector2I
+    */
     [[nodiscard]] Vector2F getUnitVector() const { return static_cast<Vector2F>(*this) / this->getMagnitude(); }
 
+    /**
+     * Get the dot product of this Vector2I and the other, given Vector2I
+     * @param other The Vector2I to get the dot product of with this Vector2I
+     * @return  The dot product of this Vector2I and the other, given Vector2I
+     */
     [[nodiscard]] int dot(Vector2I other) const { return x * other.x + y * other.y; }
 
+    /**
+     * Get the magnitude of the cross product of this Vector2I and the other, given Vector2I
+     * @param other The Vector2I to get the cross product of with this Vector2I
+     * @return  The magnitude of the cross product of this Vector2I and the other, given Vector2I
+     */
     [[nodiscard]] int cross(Vector2I other) const { return x * other.y - other.x * y; }
 
+    /**
+     * Get the scalar distance from this Vector2I to the other, given Vector2I
+     * @param other The Vector2I to get the distance to from this Vector2I
+     * @return  The scalar distance from this Vector2I to the other, given Vector2I
+     */
     [[nodiscard]] float getDistanceTo(Vector2I other) const
     {
         return sqrtf( powf(static_cast<float>(other.x - x), 2) + powf(static_cast<float>(other.y - y), 2));
+    }
+
+    /**
+     * Get the scalar distance squared from this Vector2I to the other, given Vector2I
+     * @param other The Vector2I to get the distance squared to from this Vector2I
+     * @return  The scalar distance squared from this Vector2I to the other, given Vector2I
+     */
+    [[nodiscard]] float getDistanceSquaredTo(Vector2I other) const
+    {
+        return powf(static_cast<float>(other.x - x), 2) + powf(static_cast<float>(other.y - y), 2);
     }
 
     /* Arithmetic Operators */

@@ -9,76 +9,78 @@
 
 RigidBody::RigidBody(const Vector2F & centerOfMass, float width, float height, float mass, float rotation, float restitution) :
         centerOfMass(centerOfMass),
-        collisionMesh{
-                {-width / 2, -height / 2},
-                {width / 2,  -height / 2},
-                {width / 2,  height / 2},
-                {-width / 2, height / 2}},
         inverseMass(mass != 0 ? 1.f/mass : 1.f),
         restitution(restitution),
         velocity{},
         acceleration{},
         angularVelocity{},
-        angularAcceleration{}
+        angularAcceleration{},
+        collisionMesh{},
+        momentOfInertia{}
 #ifdef __DEBUG
         , isCollidingDEBUG{}
 #endif
 {
-    momentOfInertia = PhysicsEngine::calculateMomentOfInertia(collisionMesh, 1/inverseMass);
+    setCollisionMesh({{-width / 2, -height / 2},
+                      {width / 2,  -height / 2},
+                      {width / 2,  height / 2},
+                      {-width / 2, height / 2}});
     rotate(rotation);
 }
 
 RigidBody::RigidBody(const Vector2F & centerOfMass, float width, float height, bool isStatic, float rotation, float restitution) :
         centerOfMass(centerOfMass),
-        collisionMesh{
-                {-width / 2, -height / 2},
-                {width / 2,  -height / 2},
-                {width / 2,  height / 2},
-                {-width / 2, height / 2}},
         inverseMass(isStatic ? 0.f : 1.f ),
         restitution(restitution),
         velocity{},
         acceleration{},
         angularVelocity{},
-        angularAcceleration{}
+        angularAcceleration{},
+        collisionMesh{},
+        momentOfInertia{}
 #ifdef __DEBUG
         , isCollidingDEBUG{}
 #endif
 {
-    momentOfInertia = PhysicsEngine::calculateMomentOfInertia(collisionMesh, 1/inverseMass);
+    setCollisionMesh({{-width / 2, -height / 2},
+                      {width / 2,  -height / 2},
+                      {width / 2,  height / 2},
+                      {-width / 2, height / 2}});
     rotate(rotation);
 }
 
 RigidBody::RigidBody(const Vector2F& centerOfMass, const std::vector<Vector2F>& collisionMesh, float mass, float restitution) :
         centerOfMass(centerOfMass),
-        collisionMesh(collisionMesh),
         inverseMass(mass > 0 ? 1.f/mass : 1.f),
         restitution(restitution),
         velocity{},
         acceleration{},
         angularVelocity{},
-        angularAcceleration{}
+        angularAcceleration{},
+        collisionMesh{},
+        momentOfInertia{}
 #ifdef __DEBUG
         , isCollidingDEBUG{}
 #endif
 {
-    momentOfInertia = PhysicsEngine::calculateMomentOfInertia(collisionMesh, 1/inverseMass);
+    setCollisionMesh(collisionMesh);
 }
 
 RigidBody::RigidBody(const Vector2F& centerOfMass, const std::vector<Vector2F>& collisionMesh, bool isStatic, float restitution) :
         centerOfMass(centerOfMass),
-        collisionMesh(collisionMesh),
         inverseMass(isStatic ? 0.f : 1.f ),
         restitution(restitution),
         velocity{},
         acceleration{},
         angularVelocity{},
-        angularAcceleration{}
+        angularAcceleration{},
+        collisionMesh{},
+        momentOfInertia{}
 #ifdef __DEBUG
-        , isCollidingDEBUG{}
+        ,isCollidingDEBUG{}
 #endif
 {
-    momentOfInertia = PhysicsEngine::calculateMomentOfInertia(collisionMesh, 1/inverseMass);
+    setCollisionMesh(collisionMesh);
 }
 
 void RigidBody::setMass(float mass) { if (mass > 0) inverseMass = 1 / mass; }
@@ -138,7 +140,33 @@ std::vector<Vector2F> RigidBody::getCollisionMeshWorld() const {
     return collisionMeshWorld;
 }
 
+void RigidBody::setCollisionMesh(std::vector<Vector2F> newCollisionMesh) {
+    Vector2F centroid;
+    float newMomentOfInertia;
+    try {
+        centroid = PhysicsEngine::calculateCentroid(newCollisionMesh);
+        // Adjust vertices relative to the new centroid
+        for (Vector2F& vertex : newCollisionMesh) vertex -= centroid;
+
+        newMomentOfInertia = PhysicsEngine::calculateMomentOfInertia(newCollisionMesh, inverseMass);
+    } catch (const EngineException& e) {
+        throw EngineException("Failed to set collision mesh", e.what());
+    }
+
+    collisionMesh = std::move(newCollisionMesh);
+    momentOfInertia = newMomentOfInertia;
+}
+
+const std::vector<Vector2F> &RigidBody::getCollisionMesh() const {
+    return collisionMesh;
+}
+
+float RigidBody::getMomentOfInertia() const {
+    return momentOfInertia;
+}
+
 /* PHYSICS ENGINE */
+
 
 PhysicsEngine::PhysicsEngine() :
         gravity(Vector2F(0, DEFAULT_GRAVITY))
@@ -266,86 +294,96 @@ PhysicsEngine::CollisionInfo PhysicsEngine::getCollision(const std::shared_ptr<R
     return {penetrationVector, {}, isColliding};
 }
 
-float PhysicsEngine::calculateMomentOfInertia(const std::vector<Vector2F>& collisionMesh, float mass) {
-
-    // TODO: This function needs to be reworked
-    if (mass == std::numeric_limits<float>().infinity()) return mass;
-    // Calculate the area of the mesh
-    float area{};
-    for (auto it = collisionMesh.begin() + 1; it != collisionMesh.end() - 1; ++it)
-    {
-        area += (*std::next(it) - *collisionMesh.begin()).cross(*it - *collisionMesh.begin()) / 2;
+Vector2F PhysicsEngine::calculateCentroid(const std::vector<Vector2F>& polygonVertices) {
+    if (polygonVertices.size() < 3) {
+        throw EngineException("Invalid Polygon", "Centroid calculation requires at least 3 polygonVertices.");
     }
-    area = std::abs(area);
 
-    // Calculate the density
-    float density = mass / area;
+    Vector2F centroid{};
+    float signedArea = 0.0f;
+    size_t numVertices = polygonVertices.size();
 
-    // Calculate the moment of inertia
-    float newMomentOfInertia{};
-    for (auto it = collisionMesh.begin() + 1; it != collisionMesh.end() - 1; ++it)
-    {
+    for (size_t i = 0; i < numVertices; ++i) {
+        size_t j = (i + 1) % numVertices;
+
+        float A = polygonVertices[i].x * polygonVertices[j].y - polygonVertices[j].x * polygonVertices[i].y;
+        signedArea += A;
+        centroid.x += (polygonVertices[i].x + polygonVertices[j].x) * A;
+        centroid.y += (polygonVertices[i].y + polygonVertices[j].y) * A;
+    }
+
+    if (std::abs(signedArea) < std::numeric_limits<float>::epsilon()) {
+        throw EngineException("Degenerate Polygon", "Polygon has zero or near-zero area.");
+    }
+
+    centroid /= (3.0f * signedArea);
+    return centroid;
+}
+
+
+float PhysicsEngine::calculateMomentOfInertia(const std::vector<Vector2F>& polygonVertices, float inverseMass) {
+    if (polygonVertices.size() < 3) {
+        throw EngineException("Invalid Polygon", "Moment of inertia calculation requires at least 3 vertices.");
+    }
+    if (inverseMass == 0) return std::numeric_limits<float>::max();
+
+    float area{};
+    float momentOfInertiaAtP1{};
+
+    // Loop through all the points in the collision mesh except the first and last to separate it into triangles
+    for (auto it = polygonVertices.begin() + 1; it != polygonVertices.end() - 1; ++it) {
+
         // Get the points of the triangle
-        Vector2F p1 = *collisionMesh.begin();
-        Vector2F p2 = *it;
-        Vector2F p3 = *std::next(it);
+        Vector2F p1 = *it; // Current vertex
+        Vector2F p2 = *std::next(it); // Next vertex
+        Vector2F p3 = *polygonVertices.begin(); // First vertex (reference)
 
-        //Get the vectors of the triangle
+        // Get the vectors of the triangle
         Vector2F v1 = p2 - p1;
         Vector2F v2 = p3 - p1;
 
-        // Find the width of the base of the triangle
         float width = v1.getMagnitude();
-        // Get the area to calculate the height from A = wh / 2
-        float triangleArea = std::abs( v2.cross(v1) / 2 );
-        float height = ( 2 * triangleArea ) / width;
+        float height = v1.cross(v2) / width;
 
-        // Find a fourth point to split the triangle into two right-angled triangles
-        Vector2F p4 = p1 + v1 * (v2.dot(v1)/powf(width, 2));
-        float width1 = p1.getDistanceTo(p4);
-        float width2 = p4.getDistanceTo(p2);
+        // Project v2 onto v1 to split the width into two, making two right-angled triangles, A (p1, p4, p3) and B (p4, p2, p3)
+        Vector2F p4 = p1 + v1 * (v2.dot(v1) / powf(width, 2));
+        float widthA = p1.getDistanceTo(p4);
+        float widthB = p2.getDistanceTo(p4);
 
-        // Calculate the moments of inertia around p3 using the equation for a right-angled triangle
-        float i1 = density * width1 * height * ((powf(height, 2) / 4) + (powf(width1, 2) / 12));
-        float i2 = density * width2 * height * ((powf(height, 2) / 4) + (powf(width2, 2) / 12));
+        // Calculate areas of the right-angled triangles
+        float areaA = (widthA * height) / 2;
+        float areaB = (widthB * height) / 2;
 
-        // Use the parallel axis theorem to shift the moment of inertia to the origin (0, 0)
-        Vector2F centroid1 = {
-                (p2.x + p3.x + p4.x) / 3,
-                (p2.y + p3.y + p4.y) / 3,
+        // Calculate the moment of inertia at
+        auto calculateMomentOfInertiaOfRightAngledTriangle = [&](float width, float height) {
+            return((width * powf(height, 3)) / 4 + (powf(width, 3) * height) / 12);
         };
-        Vector2F centroid2 = {
-                (p1.x + p3.x + p4.x) / 3,
-                (p1.y + p3.y + p4.y) / 3,
-        };
-        float mass1 = 0.5f * width1 * height * density;
-        float mass2 = 0.5f * width2 * height * density;
 
-        float i1cm = i1 - (mass1 * powf(centroid1.getDistanceTo(p3), 2));
-        float i2cm = i2 - (mass2 * powf(centroid2.getDistanceTo(p3), 2));
-
-        float momentOfInertia1 = i1cm + (mass1 * powf(centroid1.getDistanceTo({0, 0}), 2));
-        float momentOfInertia2 = i2cm + (mass2 * powf(centroid2.getDistanceTo({0, 0}), 2));
-
+        // Decide whether to add or subtract the moments of inertia on whether the triangle is negative or positive space
         if ((p1 - p3).cross(p4 - p3) > 0) {
-            newMomentOfInertia += momentOfInertia1;
+            momentOfInertiaAtP1 += calculateMomentOfInertiaOfRightAngledTriangle(widthA, height);
+            area += areaA;
         } else {
-            newMomentOfInertia -= momentOfInertia1;
+            momentOfInertiaAtP1 -= calculateMomentOfInertiaOfRightAngledTriangle(widthA, height);
+            area -= areaA;
         }
         if ((p4 - p3).cross(p2 - p3) > 0) {
-            newMomentOfInertia += momentOfInertia2;
+            momentOfInertiaAtP1 += calculateMomentOfInertiaOfRightAngledTriangle(widthB, height);
+            area += areaB;
         } else {
-            newMomentOfInertia -= momentOfInertia2;
+            momentOfInertiaAtP1 -= calculateMomentOfInertiaOfRightAngledTriangle(widthB, height);
+            area -= areaB;
         }
     }
+    momentOfInertiaAtP1 = std::abs(momentOfInertiaAtP1 * ((1/inverseMass) / area));
 
-    return std::abs(newMomentOfInertia);
+    // Get the moment of inertia at the center of inverseMass using parallel axis theorem and return it
+    return momentOfInertiaAtP1 - polygonVertices[0].getDistanceSquaredTo(Vector2F()) / inverseMass;
 }
 
 void PhysicsEngine::setGravity(float gravityValue) { gravity = Vector2F(0, gravityValue); }
 
 void PhysicsEngine::setGravity(Vector2F gravityValue) { gravity = gravityValue; }
-
 bool PhysicsEngine::resolveCollision(const std::shared_ptr<RigidBody>& rigidBodyA,
                                      const std::shared_ptr<RigidBody>& rigidBodyB)
 {
@@ -399,6 +437,7 @@ bool PhysicsEngine::resolveCollision(const std::shared_ptr<RigidBody>& rigidBody
 }
 
 #ifdef __DEBUG
+
 void PhysicsEngine::drawDebugDEBUG()
 {
     if (doDebugDEBUG)
