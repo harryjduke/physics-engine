@@ -6,7 +6,7 @@
 
 #include "utils/GameMath.h"
 
-static const float DEFAULT_GRAVITY = 980.f; // cm/s
+static constexpr float DEFAULT_GRAVITY = 980.f; // cm/s
 
 /**
  * @brief A struct containing the data required for a physics based rigid body.
@@ -17,8 +17,8 @@ struct RigidBody
 {
     RigidBody(const Vector2F & centerOfMass, float width, float height, float mass = 1.f, float rotation = 0.f, float restitution = 0.5f);
     RigidBody(const Vector2F & centerOfMass, float width, float height, bool isStatic, float rotation = 0.f, float restitution = 0.5f);
-    RigidBody(const Vector2F& centerOfMass, const std::vector<Vector2F>& vertices, float mass = 1.f, float restitution = 0.5f);
-    RigidBody(const Vector2F& centerOfMass, const std::vector<Vector2F>& vertices, bool isStatic, float restitution = 0.5f);
+    RigidBody(const Vector2F& centerOfMass, const std::vector<Vector2F>& collisionMesh, float mass = 1.f, float restitution = 0.5f);
+    RigidBody(const Vector2F& centerOfMass, const std::vector<Vector2F>& collisionMesh, bool isStatic, float restitution = 0.5f);
 
     /** The position of the centerOfMass of mass of this object relative to the origin (top-left) */
     Vector2F centerOfMass;
@@ -62,10 +62,16 @@ struct RigidBody
     void setCollisionMesh(std::vector<Vector2F> newCollisionMesh);
 
     /**
-     * Gets the rotational (area) moment of inertia of the collisionMesh at the center of mass
-     * @return The rotational (area) moment of inertia of the collisionMesh at the center of mass
+     * Gets this RigidBody's collisionMesh relative to the world origin
+     * @return A vector of this RigidBody's collisionMesh relative to the world origin
      */
-    [[nodiscard]] float getMomentOfInertia() const;
+    [[nodiscard]] std::vector<Vector2F> getCollisionMeshWorld() const;
+
+    /**
+     * Get the normals of each of the edges of the collisionMesh
+     * @return  A vector of Vector2F representing to the normals of each of the sides of the collisionMesh
+     */
+    [[nodiscard]] std::vector<Vector2F> getNormals();
 
     /**
      * Perform a rotation on this RigidBody by a given angleRadians, rotating all the collisionMesh around the centerOfMass
@@ -74,10 +80,10 @@ struct RigidBody
     void rotate(float angleRadians);
 
     /**
-     * Get the normals of each of the edges of the collisionMesh
-     * @return  A vector of Vector2F representing to the normals of each of the sides of the collisionMesh
+     * Gets the rotational (area) moment of inertia of the collisionMesh at the center of mass
+     * @return The rotational (area) moment of inertia of the collisionMesh at the center of mass
      */
-    [[nodiscard]] std::vector<Vector2F> getNormals();
+    [[nodiscard]] float getMomentOfInertia() const;
 
     /**
      * Get an axis-aligned bounding box containing this RigidBody, this is not the exact collision but anything that
@@ -87,13 +93,7 @@ struct RigidBody
      */
     [[nodiscard]] RectF getBoundingBox() const;
 
-    /**
-     * Gets this RigidBody's collisionMesh relative to the world origin
-     * @return A vector of this RigidBody's collisionMesh relative to the world origin
-     */
-    [[nodiscard]] std::vector<Vector2F> getCollisionMeshWorld() const;
-
-private:
+   private:
     /** A vector of this RigidBody's collisionMesh stored as positions relative to the RigidBody's centerOfMass */
     std::vector<Vector2F> collisionMesh;
 
@@ -130,10 +130,18 @@ public:
      */
     void registerRigidBody(const std::shared_ptr<RigidBody>& rigidBody);
 
+    /**
+     * A data structure that holds the information about a collision between two objects.
+     * @property isColliding A boolean that is true if the two objects are colliding, false if not
+     * @property penetrationVector A Vector2F with the direction of the collision normal and a magnitude of the overlap
+     * @property collisionPoint A Vector2F position in world space of where the two objects collided
+     * @property timeSinceCollision A float representing the time in seconds since the collision occourred
+     */
     struct CollisionInfo {
+        bool isColliding{};
         Vector2F penetrationVector;
         Vector2F collisionPoint;
-        bool isColliding;
+        float timeSinceCollision{};
     };
 
     /**
@@ -143,7 +151,8 @@ public:
      * @return The collision vector with the direction being the collision normal and the magnitude being the
      * penetration depth. Zero if there was no collision
      */
-    static CollisionInfo getCollision(const std::shared_ptr<RigidBody>& rigidBodyA, const std::shared_ptr<RigidBody>& rigidBodyB);
+    static CollisionInfo getCollision(const std::shared_ptr<RigidBody>& rigidBodyA,
+                                      const std::shared_ptr<RigidBody>& rigidBodyB);
 
     /**
      * Calculates the centroid (center of mass) of an arbitrary polygon with more that three vertices defined by a
@@ -191,10 +200,12 @@ private:
      * colliding, move them apart to negate the overlap and apply a velocity to each based on the restitution of the
      * RigidBodies
      * @param rigidBodyA, rigidBodyB  The RigidBodies to resolve a collision between
+     * @param collisionInfo The information about the collision stored in a collisionInfo struct
      * @return  True if a collision was resolved, false if there was no collision
      */
-    static bool resolveCollision(const std::shared_ptr<RigidBody>& rigidBodyA,
-                                 const std::shared_ptr<RigidBody>& rigidBodyB);
+    static bool resolveCollision(const std::shared_ptr<RigidBody> &rigidBodyA,
+                                 const std::shared_ptr<RigidBody> &rigidBodyB,
+                                 const CollisionInfo &collisionInfo);
 
 #ifdef __DEBUG
 public:
@@ -217,7 +228,6 @@ private:
     /** Polygons (as vector<Vector2F) put in this vector will be rendered on the next frame and removed */
     std::vector<std::vector<Vector2F>> debugQueue;
 #endif
-
 };
 
 #endif
