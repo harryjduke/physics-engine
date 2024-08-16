@@ -7,7 +7,7 @@
 #include <SDL_rect.h>
 #include <cmath>
 
-static const float PI = 3.14159265358979323846;
+static constexpr float PI = 3.14159265358979323846;
 
 inline float toRadians(float deg) {
 	return deg * PI/180;
@@ -265,21 +265,21 @@ struct Rectangle2I {
 		return { x, y, w, h };
 	}
 
-	[[nodiscard]] inline bool contains(const Vector2I& p) const {
+	[[nodiscard]] bool contains(const Vector2I& p) const {
 		return p.x >= x && p.x <= x + w
 			&& p.y >= y && p.y <= y + h;
 	}
 
-	[[nodiscard]] inline bool intersects(const Rectangle2I& other) const {
-		SDL_Rect rect1 = getSDLRect();
-		SDL_Rect rect2 = other.getSDLRect();
+	[[nodiscard]] bool intersects(const Rectangle2I& other) const {
+		const SDL_Rect rect1 = getSDLRect();
+		const SDL_Rect rect2 = other.getSDLRect();
 
 		return SDL_HasIntersection(&rect1, &rect2) == SDL_TRUE;
 	}
 
-	inline bool intersects(const Line2i& line) {
+	[[nodiscard]] bool intersects(const Line2i& line) const {
 		int x1 = line.start.x, y1 = line.start.y, x2 = line.end.x, y2 = line.end.y;
-		SDL_Rect rect = { x, y, w, h };
+		const SDL_Rect rect = { x, y, w, h };
 		return SDL_IntersectRectAndLine(&rect, &x1, &y1, &x2, &y2) == SDL_TRUE;
 	}
 
@@ -320,9 +320,9 @@ struct Rectangle2F {
 		return SDL_HasIntersectionF(&rect1, &rect2) == SDL_TRUE;
 	}
 
-	inline bool intersects(const Line2f& line) {
+	[[nodiscard]] bool intersects(const Line2f& line) const {
 		float x1 = line.start.x, y1 = line.start.y, x2 = line.end.x, y2 = line.end.y;
-		SDL_FRect rect = { x, y, w, h };
+		const SDL_FRect rect = { x, y, w, h };
 		return SDL_IntersectFRectAndLine(&rect, &x1, &y1, &x2, &y2) == SDL_TRUE;
 	}
 

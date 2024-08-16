@@ -5,9 +5,10 @@
 
 #include "XCube2d.h"
 
-/* PHYSICS OBJECT */
+/* RIGID BODY */
 
-RigidBody::RigidBody(const Vector2F & centerOfMass, float width, float height, float mass, float rotation, float restitution) :
+RigidBody::RigidBody(const Vector2F &centerOfMass, const float width, const float height, const float mass,
+                     const float rotation, const float restitution) :
         centerOfMass(centerOfMass),
         inverseMass(mass != 0 ? 1.f/mass : 1.f),
         restitution(restitution),
@@ -28,7 +29,8 @@ RigidBody::RigidBody(const Vector2F & centerOfMass, float width, float height, f
     rotate(rotation);
 }
 
-RigidBody::RigidBody(const Vector2F & centerOfMass, float width, float height, bool isStatic, float rotation, float restitution) :
+RigidBody::RigidBody(const Vector2F &centerOfMass, const float width, const float height, const bool isStatic,
+                     const float rotation, const float restitution) :
         centerOfMass(centerOfMass),
         inverseMass(isStatic ? 0.f : 1.f ),
         restitution(restitution),
@@ -49,7 +51,8 @@ RigidBody::RigidBody(const Vector2F & centerOfMass, float width, float height, b
     rotate(rotation);
 }
 
-RigidBody::RigidBody(const Vector2F& centerOfMass, const std::vector<Vector2F>& collisionMesh, float mass, float restitution) :
+RigidBody::RigidBody(const Vector2F &centerOfMass, const std::vector<Vector2F>& collisionMesh, const float mass,
+                     const float restitution) :
         centerOfMass(centerOfMass),
         inverseMass(mass > 0 ? 1.f/mass : 1.f),
         restitution(restitution),
@@ -66,7 +69,8 @@ RigidBody::RigidBody(const Vector2F& centerOfMass, const std::vector<Vector2F>& 
     setCollisionMesh(collisionMesh);
 }
 
-RigidBody::RigidBody(const Vector2F& centerOfMass, const std::vector<Vector2F>& collisionMesh, bool isStatic, float restitution) :
+RigidBody::RigidBody(const Vector2F &centerOfMass, const std::vector<Vector2F> &collisionMesh, const bool isStatic,
+                     const float restitution) :
         centerOfMass(centerOfMass),
         inverseMass(isStatic ? 0.f : 1.f ),
         restitution(restitution),
@@ -85,17 +89,30 @@ RigidBody::RigidBody(const Vector2F& centerOfMass, const std::vector<Vector2F>& 
 
 void RigidBody::setMass(float mass) { if (mass > 0) inverseMass = 1 / mass; }
 
-void RigidBody::rotate(float angleRadians) {
-    // Calculate sine and cosine of the angleRadians
-    float sinAngle = std::sin(angleRadians);
-    float cosAngle = std::cos(angleRadians);
+const std::vector<Vector2F> &RigidBody::getCollisionMesh() const {
+    return collisionMesh;
+}
 
-    for (auto& vertex : collisionMesh){
-        vertex = { // Rotate the vertex
-            vertex.x * cosAngle - vertex.y * sinAngle,
-            vertex.x * sinAngle + vertex.y * cosAngle
-        };
+void RigidBody::setCollisionMesh(std::vector<Vector2F> newCollisionMesh) {
+    float newMomentOfInertia;
+    try {
+        Vector2F centroid = PhysicsEngine::calculateCentroid(newCollisionMesh);
+        // Adjust vertices relative to the new centroid
+        for (Vector2F& vertex : newCollisionMesh) vertex -= centroid;
+
+        newMomentOfInertia = PhysicsEngine::calculateMomentOfInertia(newCollisionMesh, inverseMass);
     }
+    catch (const EngineException& e) {
+        throw EngineException("Failed to set collision mesh", e.what());
+    }
+    collisionMesh = std::move(newCollisionMesh);
+    momentOfInertia = newMomentOfInertia;
+}
+
+std::vector<Vector2F> RigidBody::getCollisionMeshWorld() const {
+    std::vector<Vector2F> collisionMeshWorld = collisionMesh;
+    for (auto& vertex : collisionMeshWorld) vertex += centerOfMass;
+    return collisionMeshWorld;
 }
 
 std::vector<Vector2F> RigidBody::getNormals() {
@@ -115,50 +132,29 @@ std::vector<Vector2F> RigidBody::getNormals() {
 RectF RigidBody::getBoundingBox() const {
     if (collisionMesh.empty()) return RectF{};
 
-    RectF boundingBox{collisionMesh[0].x, collisionMesh[0].y, 0.0f, 0.0f }; // Initialize width and height to 0
-
-    for (auto it = std::next(collisionMesh.begin()); it != collisionMesh.end(); it++) {
+    RectF boundingBox{collisionMesh[0].x, collisionMesh[0].y, 0.0f, 0.0f };
+    for (auto it = std::next(collisionMesh.begin()); it != collisionMesh.end(); ++it) {
         boundingBox.x = std::min(boundingBox.x, it->x);
         boundingBox.y = std::min(boundingBox.y, it->y);
     }
-
-    for (auto vertex : collisionMesh) {
-        boundingBox.w = std::max(boundingBox.w, vertex.x - boundingBox.x); // Update width based on x
-        boundingBox.h = std::max(boundingBox.h, vertex.y - boundingBox.y); // Update height based on y
+    for (const Vector2F vertex : collisionMesh) {
+        boundingBox.w = std::max(boundingBox.w, vertex.x - boundingBox.x);
+        boundingBox.h = std::max(boundingBox.h, vertex.y - boundingBox.y);
     }
-
     return boundingBox + centerOfMass;
 }
 
-std::vector<Vector2F> RigidBody::getCollisionMeshWorld() const {
-    std::vector<Vector2F> collisionMeshWorld = collisionMesh;
+void RigidBody::rotate(const float angleRadians) {
+    // Calculate sine and cosine of the angleRadians
+    float sinAngle = std::sin(angleRadians);
+    float cosAngle = std::cos(angleRadians);
 
-    for (auto& vertex : collisionMeshWorld)
-    {
-        vertex += centerOfMass;
+    for (auto& vertex : collisionMesh){
+        vertex = { // Rotate the vertex
+            vertex.x * cosAngle - vertex.y * sinAngle,
+            vertex.x * sinAngle + vertex.y * cosAngle
+        };
     }
-    return collisionMeshWorld;
-}
-
-void RigidBody::setCollisionMesh(std::vector<Vector2F> newCollisionMesh) {
-    Vector2F centroid;
-    float newMomentOfInertia;
-    try {
-        centroid = PhysicsEngine::calculateCentroid(newCollisionMesh);
-        // Adjust vertices relative to the new centroid
-        for (Vector2F& vertex : newCollisionMesh) vertex -= centroid;
-
-        newMomentOfInertia = PhysicsEngine::calculateMomentOfInertia(newCollisionMesh, inverseMass);
-    } catch (const EngineException& e) {
-        throw EngineException("Failed to set collision mesh", e.what());
-    }
-
-    collisionMesh = std::move(newCollisionMesh);
-    momentOfInertia = newMomentOfInertia;
-}
-
-const std::vector<Vector2F> &RigidBody::getCollisionMesh() const {
-    return collisionMesh;
 }
 
 float RigidBody::getMomentOfInertia() const {
@@ -175,7 +171,7 @@ PhysicsEngine::PhysicsEngine() :
 #endif
 { }
 
-void PhysicsEngine::update(float deltaTime)
+void PhysicsEngine::update(const float deltaTime)
 {
     for (const auto& rigidBody : rigidBodies)
     {
@@ -189,7 +185,7 @@ void PhysicsEngine::update(float deltaTime)
         // Apply acceleration (a = f/m)
         rigidBody->acceleration = force * rigidBody->inverseMass;
         // Apply angular acceleration (α = t/I)
-        rigidBody->angularAcceleration = torque / rigidBody->momentOfInertia;
+        rigidBody->angularAcceleration = torque / rigidBody->getMomentOfInertia();
 
         // Add gravity (as gravity is a constant acceleration, we don't need to calculate the force)
         if (rigidBody->inverseMass != 0) // If the rigidBody is not static
@@ -216,21 +212,33 @@ void PhysicsEngine::update(float deltaTime)
             // Broad phase collision test
             if (rigidBodies[i]->getBoundingBox().intersects(rigidBodies[j]->getBoundingBox()))
             {
-                bool didCollide = resolveCollision(rigidBodies[i], rigidBodies[j]);
+                if (CollisionInfo collisionInfo = getCollision(rigidBodies[i], rigidBodies[j]);
+                    collisionInfo.isColliding) {
+                    resolveCollision(rigidBodies[i], rigidBodies[j], collisionInfo);
+                    /**
 #ifdef __DEBUG
-                if (didCollide && !(rigidBodies[i] == rigidBodies[0] || rigidBodies[j] == rigidBodies[0]))
-                {
-                    debugQueue.push_back(rigidBodies[i]->getCollisionMeshWorld());
-                    debugQueue.push_back(rigidBodies[j]->getCollisionMeshWorld());
-                }
+                    if (collisionInfo.isColliding)
+                    {
+                        debugQueue.push_back({collisionInfo.collisionPoint - Vector2F{5, 0},
+                                              collisionInfo.collisionPoint + Vector2F{5, 0}});
+                        debugQueue.push_back({collisionInfo.collisionPoint - Vector2F{0, 5},
+                                              collisionInfo.collisionPoint + Vector2F{0, 5}});
+                        debugQueue.push_back({rigidBodies[j]->centerOfMass, {collisionInfo.penetrationVector * 10.f + rigidBodies[j]->centerOfMass}});
+                        if (!(rigidBodies[i] == rigidBodies[0] || rigidBodies[j] == rigidBodies[0]))
+                        {
+                            debugQueue.push_back(rigidBodies[i]->getCollisionMeshWorld());
+                            debugQueue.push_back(rigidBodies[j]->getCollisionMeshWorld());
+                        }
+                    }
 #endif
+                    **/
+                }
             }
         }
     }
 }
 
 void PhysicsEngine::registerRigidBody(const std::shared_ptr<RigidBody> &rigidBody) { rigidBodies.push_back(rigidBody); }
-
 
 PhysicsEngine::CollisionInfo PhysicsEngine::getCollision(const std::shared_ptr<RigidBody>& rigidBodyA,
                                           const std::shared_ptr<RigidBody>& rigidBodyB)
@@ -243,10 +251,13 @@ PhysicsEngine::CollisionInfo PhysicsEngine::getCollision(const std::shared_ptr<R
     axes.insert(axes.end(), normalsB.begin(), normalsB.end());
     for (auto& axis : axes) axis = axis.getUnitVector(); // OPTIMISE: only get the unit vector if it is needed to calculate penetration
 
+    Vector2F relativeVelocityAB = rigidBodyB->velocity - rigidBodyA->velocity;
+
+    float timeSinceCollision = std::numeric_limits<float>::max();
     Vector2F penetrationVector{std::numeric_limits<float>::max()};
-
+    Vector2F collisionAxis{};
+    Vector2F collisionPoint;
     bool isColliding = false;
-
     for (auto axis : axes)
     {
         std::vector<Vector2F> rigidBodyACollisionMesh = rigidBodyA->getCollisionMeshWorld();
@@ -267,31 +278,168 @@ PhysicsEngine::CollisionInfo PhysicsEngine::getCollision(const std::shared_ptr<R
             rigidBodyBMaxProjection = std::max(rigidBodyBMaxProjection, it->dot(axis));
         }
 
-        float penetrationMagnitude{};
-        if (rigidBodyBMaxProjection <= rigidBodyAMinProjection || rigidBodyAMaxProjection <= rigidBodyBMinProjection)
-            return {Vector2F{}, Vector2F{}, false};
-        else
-            penetrationMagnitude = std::min(rigidBodyBMaxProjection - rigidBodyAMinProjection,
+        if (rigidBodyBMaxProjection > rigidBodyAMinProjection && rigidBodyAMaxProjection > rigidBodyBMinProjection)
+        {
+            float penetrationMagnitude = std::min(rigidBodyBMaxProjection - rigidBodyAMinProjection,
                                             rigidBodyAMaxProjection - rigidBodyBMinProjection);
+            float timeSinceCollisionOnCurrentAxis = std::abs(penetrationMagnitude / relativeVelocityAB.dot(axis));
 
-        // Find the penetration with the smallest magnitude to work out how the objects should be separated
-        if (penetrationMagnitude < penetrationVector.getMagnitude()) {
-            penetrationVector = axis * penetrationMagnitude;
+            // Find the penetration with the smallest magnitude to work out how the objects should be separated
+            if (timeSinceCollisionOnCurrentAxis < timeSinceCollision)
+            {
+                timeSinceCollision = timeSinceCollisionOnCurrentAxis;
+                penetrationVector = axis * penetrationMagnitude;
+                collisionAxis = axis;
 
-            // Multiple axis can give the same result despite not pointing the correct way ( i.e. parallel edges will
-            // have opposite normals along the same axis) so reverse the direction if it is not pointing the right way
-            Vector2F relativeVelocity = rigidBodyA->velocity - rigidBodyB->velocity;
-            if (relativeVelocity.dot(penetrationVector) > 0.0f) {
-                penetrationVector = -penetrationVector;
+                // Multiple axis can give the same result despite not pointing the correct way ( i.e. parallel edges will
+                // have opposite normals along the same axis) so reverse the direction if it is not pointing the right way
+                Vector2F relativeVelocity = rigidBodyA->velocity - rigidBodyB->velocity;
+                if (relativeVelocity.dot(penetrationVector) > 0.0f) {
+                    penetrationVector = -penetrationVector;
+                }
+
             }
 
+            isColliding = true;
         }
-
-        isColliding = true;
+        else return CollisionInfo{};
     }
 
+    auto getMinMaxProjectionsAlongAxis =
+            [](const Vector2F &axis, const std::vector<Vector2F> &collisionMesh,
+               std::vector<Vector2F> &minVertices, std::vector<Vector2F> &maxVertices,
+               float &minProjection, float &maxProjection)
+            {
+                minVertices = maxVertices = {collisionMesh[0]};
+                minProjection = maxProjection = collisionMesh[0].dot(axis);
 
-    return {penetrationVector, {}, isColliding};
+                for (int i = 1; i < collisionMesh.size(); ++i) {
+                    Vector2F vertex = collisionMesh[i];
+                    float projection = vertex.dot(axis);
+
+                    if (std::abs(projection - minProjection) <= std::max(std::abs(projection), std::abs(minProjection)) * SDL_FLT_EPSILON * 10)
+                        minVertices.push_back(vertex);
+                    else if (projection < minProjection)
+                    {
+                        minVertices = {vertex};
+                        minProjection = projection;
+                    }
+
+
+                    if (std::abs(projection - maxProjection) <= std::max(std::abs(projection), std::abs(maxProjection)) * SDL_FLT_EPSILON * 10)
+                        maxVertices.push_back(vertex);
+                    else if (projection > maxProjection) {
+                        maxVertices = {vertex};
+                        maxProjection = projection;
+                    }
+                }
+            };
+
+    std::vector<Vector2F> rigidBodyACollisionMesh = rigidBodyA->getCollisionMeshWorld();
+    std::vector<Vector2F> rigidBodyBCollisionMesh = rigidBodyB->getCollisionMeshWorld();
+    std::vector<Vector2F> rigidBodyAMinVertices, rigidBodyAMaxVertices, rigidBodyBMinVertices, rigidBodyBMaxVertices;
+    float rigidBodyAMinProjection, rigidBodyAMaxProjection, rigidBodyBMinProjection, rigidBodyBMaxProjection;
+
+    getMinMaxProjectionsAlongAxis(collisionAxis, rigidBodyACollisionMesh,
+                                  rigidBodyAMinVertices, rigidBodyAMaxVertices,
+                                  rigidBodyAMinProjection, rigidBodyAMaxProjection);
+    getMinMaxProjectionsAlongAxis(collisionAxis, rigidBodyBCollisionMesh,
+                                  rigidBodyBMinVertices, rigidBodyBMaxVertices,
+                                  rigidBodyBMinProjection, rigidBodyBMaxProjection);
+
+    std::vector<Vector2F> rigidBodyACollidingVertices;
+    float rigidBodyACollidingProjection;
+    std::vector<Vector2F> rigidBodyBCollidingVertices;
+    float rigidBodyBCollidingProjection;
+    if (rigidBodyAMaxProjection - rigidBodyBMinProjection > rigidBodyBMaxProjection - rigidBodyAMinProjection)
+    {
+        rigidBodyACollidingVertices = rigidBodyAMinVertices;
+        rigidBodyACollidingProjection = rigidBodyAMinProjection;
+        rigidBodyBCollidingVertices = rigidBodyBMaxVertices;
+        rigidBodyBCollidingProjection = rigidBodyBMaxProjection;
+    }
+    else
+    {
+        rigidBodyACollidingVertices = rigidBodyAMaxVertices;
+        rigidBodyACollidingProjection = rigidBodyAMaxProjection;
+        rigidBodyBCollidingVertices = rigidBodyBMinVertices;
+        rigidBodyBCollidingProjection = rigidBodyBMinProjection;
+    }
+    if (rigidBodyACollidingVertices.size() == 1)
+        collisionPoint = rigidBodyACollidingVertices[0];
+    else if (rigidBodyBCollidingVertices.size() == 1)
+        collisionPoint = rigidBodyBCollidingVertices[0];
+    else
+    {
+        Vector2F collisionAxisPerpendicular = {-collisionAxis.y, collisionAxis.x};
+        std::vector<float> edgeProjections = {
+                rigidBodyACollidingVertices.front().dot(collisionAxisPerpendicular),
+                rigidBodyACollidingVertices.back().dot(collisionAxisPerpendicular),
+                rigidBodyBCollidingVertices.front().dot(collisionAxisPerpendicular),
+                rigidBodyBCollidingVertices.back().dot(collisionAxisPerpendicular)
+        };
+
+        sort(edgeProjections.begin(), edgeProjections.end());
+
+        collisionPoint = collisionAxisPerpendicular * ((edgeProjections[1] + edgeProjections[2]) / 2) +
+                         collisionAxis * ((rigidBodyACollidingProjection + rigidBodyBCollidingProjection) / 2);
+    }
+
+    return {isColliding, penetrationVector, collisionPoint, timeSinceCollision};
+}
+
+bool PhysicsEngine::resolveCollision(const std::shared_ptr<RigidBody>& rigidBodyA,
+                                     const std::shared_ptr<RigidBody>& rigidBodyB,
+                                     const CollisionInfo &collisionInfo)
+{
+    if (collisionInfo.penetrationVector == Vector2F{}) return false; // Early exit for invalid collisionVector
+
+    // OPTIMISE: Some values calculated in getCollision can be cached for use here such as the collision normal
+
+
+    // Calculate the impulse (the velocity to apply to each object to respond to the collision)
+    // OPTIMISE: I might be able to avoid getting the unit vector of the collision vector here if I add back the n.n that was cancelled out in the denominator
+    const Vector2F collisionNormal = collisionInfo.penetrationVector.getUnitVector();
+    const float elasticity = std::min(rigidBodyA->restitution, rigidBodyB->restitution);
+    const Vector2F relativeCollisionPointAP = collisionInfo.collisionPoint - rigidBodyA->centerOfMass;
+    const Vector2F relativeCollisionPointBP = collisionInfo.collisionPoint - rigidBodyB->centerOfMass;
+    const float relativeCollisionPointAPPerpendicularDotN = relativeCollisionPointAP.x * collisionNormal.y -
+                                                            relativeCollisionPointAP.y * collisionNormal.x;
+    const float relativeCollisionPointBPPerpendicularDotN = relativeCollisionPointBP.x * collisionNormal.y -
+                                                            relativeCollisionPointBP.y * collisionNormal.x;
+    const Vector2F relativeVelocityAB =
+        (rigidBodyB->velocity + rigidBodyB->angularVelocity * relativeCollisionPointBPPerpendicularDotN) -
+            (rigidBodyA->velocity + rigidBodyA->angularVelocity * relativeCollisionPointAPPerpendicularDotN);
+    const float impulseMagnitude = -(1 + elasticity) * relativeVelocityAB.dot(collisionNormal) /
+                                   (
+                                       rigidBodyA->inverseMass + rigidBodyB->inverseMass +
+                                       powf(relativeCollisionPointAPPerpendicularDotN, 2) /
+                                       rigidBodyA->getMomentOfInertia() +
+                                       powf(relativeCollisionPointBPPerpendicularDotN, 2) /
+                                       rigidBodyB->getMomentOfInertia()
+                                    );
+    const Vector2F impulseVector = collisionNormal * impulseMagnitude;
+
+    // Apply the impulse to the velocities
+    rigidBodyA->angularVelocity -= (relativeCollisionPointAPPerpendicularDotN * impulseMagnitude) /
+                                    rigidBodyA->getMomentOfInertia();
+    rigidBodyB->angularVelocity += (relativeCollisionPointBPPerpendicularDotN * impulseMagnitude) /
+                                    rigidBodyB->getMomentOfInertia();
+
+    rigidBodyA->velocity -= impulseVector * rigidBodyA->inverseMass;
+    rigidBodyB->velocity += impulseVector * rigidBodyB->inverseMass;
+
+    // Calculate how much each RigidBody will be moved to negate the collision based off each RigidBody's velocity
+    const float totalVelocityMagnitude = rigidBodyA->velocity.getMagnitude() + rigidBodyB->velocity.getMagnitude();
+    const float velocityProportionA = (totalVelocityMagnitude != 0) ? rigidBodyA->velocity.getMagnitude() /
+                                                                      totalVelocityMagnitude : 0.5f;
+    const float velocityProportionB = (totalVelocityMagnitude != 0) ? rigidBodyB->velocity.getMagnitude() /
+                                                                      totalVelocityMagnitude : 0.5f;
+    // Adjust the positions to negate collision and respond to it
+    rigidBodyA->centerOfMass += collisionInfo.penetrationVector * velocityProportionA;
+    rigidBodyB->centerOfMass -= collisionInfo.penetrationVector * velocityProportionB;
+
+    return true;
 }
 
 Vector2F PhysicsEngine::calculateCentroid(const std::vector<Vector2F>& polygonVertices) {
@@ -320,7 +468,6 @@ Vector2F PhysicsEngine::calculateCentroid(const std::vector<Vector2F>& polygonVe
     return centroid;
 }
 
-
 float PhysicsEngine::calculateMomentOfInertia(const std::vector<Vector2F>& polygonVertices, float inverseMass) {
     if (polygonVertices.size() < 3) {
         throw EngineException("Invalid Polygon", "Moment of inertia calculation requires at least 3 vertices.");
@@ -342,21 +489,23 @@ float PhysicsEngine::calculateMomentOfInertia(const std::vector<Vector2F>& polyg
         Vector2F v1 = p2 - p1;
         Vector2F v2 = p3 - p1;
 
-        float width = v1.getMagnitude();
-        float height = v1.cross(v2) / width;
+        const float width = v1.getMagnitude();
+        const float height = v1.cross(v2) / width;
 
         // Project v2 onto v1 to split the width into two, making two right-angled triangles, A (p1, p4, p3) and B (p4, p2, p3)
         Vector2F p4 = p1 + v1 * (v2.dot(v1) / powf(width, 2));
-        float widthA = p1.getDistanceTo(p4);
-        float widthB = p2.getDistanceTo(p4);
+        const float widthA = p1.getDistanceTo(p4);
+        const float widthB = p2.getDistanceTo(p4);
 
         // Calculate areas of the right-angled triangles
-        float areaA = (widthA * height) / 2;
-        float areaB = (widthB * height) / 2;
+        const float areaA = (widthA * height) / 2;
+        const float areaB = (widthB * height) / 2;
 
         // Calculate the moment of inertia at
-        auto calculateMomentOfInertiaOfRightAngledTriangle = [&](float width, float height) {
-            return((width * powf(height, 3)) / 4 + (powf(width, 3) * height) / 12);
+        auto calculateMomentOfInertiaOfRightAngledTriangle = [&
+                ](const float triangleWidth, const float triangleHeight) {
+            return ((triangleWidth * powf(triangleHeight, 3)) / 4 +
+                   (powf(triangleWidth, 3) * triangleHeight) / 12);
         };
 
         // Decide whether to add or subtract the moments of inertia on whether the triangle is negative or positive space
@@ -384,57 +533,6 @@ float PhysicsEngine::calculateMomentOfInertia(const std::vector<Vector2F>& polyg
 void PhysicsEngine::setGravity(float gravityValue) { gravity = Vector2F(0, gravityValue); }
 
 void PhysicsEngine::setGravity(Vector2F gravityValue) { gravity = gravityValue; }
-bool PhysicsEngine::resolveCollision(const std::shared_ptr<RigidBody>& rigidBodyA,
-                                     const std::shared_ptr<RigidBody>& rigidBodyB)
-{
-    CollisionInfo collisionInfo = getCollision(rigidBodyA, rigidBodyB);
-    if (!collisionInfo.isColliding) return false; // No collision
-
-    // OPTIMISE: Some values calculated in getCollision can be cached for use here such as the collision normal
-    Vector2F collisionVector = collisionInfo.penetrationVector;
-    Vector2F collisionNormal = collisionInfo.penetrationVector.getUnitVector();
-    Vector2F collisionPoint = collisionInfo.collisionPoint;
-
-    Vector2F rA{};// = collisionPoint - rigidBodyA->centerOfMass;
-    Vector2F rB{};// = collisionPoint - rigidBodyB->centerOfMass;
-
-    // Calculate the impulse magnitude (the acceleration to apply to each object to respond to the collision)
-    float rA_perp_dot_n = rA.x * collisionNormal.y - rA.y * collisionNormal.x;
-    float rB_perp_dot_n = rB.x * collisionNormal.y - rB.y * collisionNormal.x;
-    //Vector2F relativeVelocity = (rigidBodyA->velocity + rigidBodyA->angularVelocity * rA_perp_dot_n) - (rigidBodyB->velocity + rigidBodyB->angularVelocity * rB_perp_dot_n);
-    Vector2F relativeVelocity = rigidBodyA->velocity - rigidBodyB->velocity;
-    float elasticity = std::min(rigidBodyA->restitution, rigidBodyB->restitution);
-
-
-    // OPTIMISE: I might be able to avoid getting the unit vector of the collision vector here if I add back the n.n that was cancelled out in the denominator
-    float denominator = rigidBodyA->inverseMass + rigidBodyB->inverseMass;// +
-                        (rA_perp_dot_n * rA_perp_dot_n) / rigidBodyA->momentOfInertia +
-                        (rB_perp_dot_n * rB_perp_dot_n) / rigidBodyB->momentOfInertia;
-
-    float impulseMagnitude = -(1 + elasticity) * relativeVelocity.dot(collisionNormal) / denominator;
-
-    Vector2F impulseVector = collisionNormal * impulseMagnitude;
-
-    // Calculate how much each RigidBody will be moved to negate the collision based off each RigidBody's velocity
-    float totalVelocityMagnitude = rigidBodyA->velocity.getMagnitude() + rigidBodyB->velocity.getMagnitude();
-    float velocityProportionA = (totalVelocityMagnitude != 0) ? rigidBodyA->velocity.getMagnitude() /
-                                                                    totalVelocityMagnitude : 0.5f;
-    float velocityProportionB = (totalVelocityMagnitude != 0) ? rigidBodyB->velocity.getMagnitude() /
-                                                                   totalVelocityMagnitude : 0.5f;
-
-    // Adjust the positions to negate collision and respond to it
-    rigidBodyA->angularVelocity += (rA_perp_dot_n * impulseMagnitude) / rigidBodyA->momentOfInertia;
-    rigidBodyB->angularVelocity -= (rB_perp_dot_n * impulseMagnitude) / rigidBodyB->momentOfInertia;
-
-    rigidBodyA->velocity += impulseVector * rigidBodyA->inverseMass;
-    rigidBodyB->velocity -= impulseVector * rigidBodyB->inverseMass;
-
-    rigidBodyA->centerOfMass += collisionVector * velocityProportionA;
-    rigidBodyB->centerOfMass -= collisionVector * velocityProportionB;
-
-
-    return true;
-}
 
 #ifdef __DEBUG
 
