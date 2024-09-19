@@ -1,3 +1,11 @@
+// This file is part of CI517_GameEngine <https://github.com/harryjduke/CI517_GameEngine>.
+// Copyright (c) 2024 Harry Duke <harryjduke@gmail.com>
+// This file includes modifications made by Harry Duke.
+//
+// This program is distributed under the terms of the GNU General Public License version 2.
+// You should have received a copy of the GNU General Public License along with this program.
+// If not, see <https://github.com/harryjduke/CI517_GameEngine/blob/main/LICENSE> or <https://www.gnu.org/licenses/>.
+
 // all code resources are taken from https://github.com/AlmasB/xcube2d/tree/master
 #ifndef GAME_MATH_H
 #define GAME_MATH_H
@@ -9,11 +17,11 @@
 
 static constexpr float PI = 3.14159265358979323846;
 
-inline float toRadians(float deg) {
+inline float toRadians(const float deg) {
 	return deg * PI/180;
 }
 
-inline float toDegrees(float rad) {
+inline float toDegrees(const float rad) {
 	return rad * 180/PI;
 }
 
@@ -23,8 +31,8 @@ struct Vector2F {
 	float y;
 
 	Vector2F() : Vector2F(0.0f, 0.0f) {}
-	Vector2F(float x, float y) : x(x), y(y) {}
-    explicit Vector2F(float s) : x(s), y(s) {}
+	Vector2F(const float x, const float y) : x(x), y(y) {}
+    explicit Vector2F(const float s) : x(s), y(s) {}
 
     /**
      * Get the magnitude of this Vector2F (the scalar distance represented by the Vector2F)
@@ -43,21 +51,21 @@ struct Vector2F {
      * @param other The Vector2F to get the dot product of with this Vector2F
      * @return  The dot product of this Vector2F and the other, given Vector2F
      */
-    [[nodiscard]] float dot(Vector2F other) const { return x * other.x + y * other.y; }
+    [[nodiscard]] float dot(const Vector2F other) const { return x * other.x + y * other.y; }
 
     /**
      * Get the magnitude of the cross product of this Vector2F and the other, given Vector2F
      * @param other The Vector2F to get the cross product of with this Vector2F
      * @return  The magnitude of the cross product of this Vector2F and the other, given Vector2F
      */
-    [[nodiscard]] float cross(Vector2F other) const { return x * other.y - other.x * y; }
+    [[nodiscard]] float cross(const Vector2F other) const { return x * other.y - other.x * y; }
 
     /**
      * Get the scalar distance from this Vector2F to the other, given Vector2F
      * @param other The Vector2F to get the distance to from this Vector2F
      * @return  The scalar distance from this Vector2F to the other, given Vector2F
      */
-    [[nodiscard]] float getDistanceTo(Vector2F other) const
+    [[nodiscard]] float getDistanceTo(const Vector2F other) const
     {
         return std::sqrt( powf(other.x - x, 2) + powf(other.y - y, 2) );
     }
@@ -67,7 +75,7 @@ struct Vector2F {
      * @param other The Vector2F to get the distance squared to from this Vector2F
      * @return  The scalar distance squared from this Vector2F to the other, given Vector2F
      */
-    [[nodiscard]] float getDistanceSquaredTo(Vector2F other) const
+    [[nodiscard]] float getDistanceSquaredTo(const Vector2F other) const
     {
         return powf(other.x - x, 2) + powf(other.y - y, 2);
     }
@@ -78,7 +86,7 @@ struct Vector2F {
      * @param origin The origin to rotate this Vector2F around
      * @return The Vector2F given from rotating this Vector2F clockwise round a given origin by a given angle in radians
      */
-    [[nodiscard]] Vector2F rotate(float angleInRads, Vector2F origin = {}) const {
+    [[nodiscard]] Vector2F rotate(const float angleInRads, const Vector2F origin = {}) const {
         // Calculate sine and cosine of the angle
         float sinAngle = std::sin(angleInRads);
         float cosAngle = std::cos(angleInRads);
@@ -139,8 +147,8 @@ struct Vector2I {
 	int y;
 
 	Vector2I() : Vector2I(0, 0) {}
-	Vector2I(int x, int y) : x(x), y(y) {}
-    explicit Vector2I(int s) : x(s), y(s) {}
+	Vector2I(const int x, const int y) : x(x), y(y) {}
+    explicit Vector2I(const int s) : x(s), y(s) {}
 
     static Vector2I zero() { return Vector2I{}; }
 
@@ -162,21 +170,21 @@ struct Vector2I {
      * @param other The Vector2I to get the dot product of with this Vector2I
      * @return  The dot product of this Vector2I and the other, given Vector2I
      */
-    [[nodiscard]] int dot(Vector2I other) const { return x * other.x + y * other.y; }
+    [[nodiscard]] int dot(const Vector2I other) const { return x * other.x + y * other.y; }
 
     /**
      * Get the magnitude of the cross product of this Vector2I and the other, given Vector2I
      * @param other The Vector2I to get the cross product of with this Vector2I
      * @return  The magnitude of the cross product of this Vector2I and the other, given Vector2I
      */
-    [[nodiscard]] int cross(Vector2I other) const { return x * other.y - other.x * y; }
+    [[nodiscard]] int cross(const Vector2I other) const { return x * other.y - other.x * y; }
 
     /**
      * Get the scalar distance from this Vector2I to the other, given Vector2I
      * @param other The Vector2I to get the distance to from this Vector2I
      * @return  The scalar distance from this Vector2I to the other, given Vector2I
      */
-    [[nodiscard]] float getDistanceTo(Vector2I other) const
+    [[nodiscard]] float getDistanceTo(const Vector2I other) const
     {
         return sqrtf( powf(static_cast<float>(other.x - x), 2) + powf(static_cast<float>(other.y - y), 2));
     }
@@ -186,7 +194,7 @@ struct Vector2I {
      * @param other The Vector2I to get the distance squared to from this Vector2I
      * @return  The scalar distance squared from this Vector2I to the other, given Vector2I
      */
-    [[nodiscard]] float getDistanceSquaredTo(Vector2I other) const
+    [[nodiscard]] float getDistanceSquaredTo(const Vector2I other) const
     {
         return powf(static_cast<float>(other.x - x), 2) + powf(static_cast<float>(other.y - y), 2);
     }
@@ -214,8 +222,8 @@ struct Vector2I {
     Vector2I& operator /= (const int& s) { x /= s; y /= s; return *this; }
 
     //Scalar to Vector2F
-    Vector2I operator * (int s) const { return Vector2I(*this) *= s; }
-    Vector2I operator / (int s) const { return Vector2I(*this) /= s; }
+    Vector2I operator * (const int s) const { return Vector2I(*this) *= s; }
+    Vector2I operator / (const int s) const { return Vector2I(*this) /= s; }
 
     explicit operator Vector2F() const {
         return {static_cast<float>(x), static_cast<float>(y)};
@@ -259,7 +267,7 @@ struct Rectangle2I {
 	int x, y, w, h;
 
     Rectangle2I() : x(0), y(0), w(0), h(0) {}
-	Rectangle2I(int x, int y, int w, int h) : x(x), y(y), w(w), h(h) {}
+	Rectangle2I(const int x, const int y, const int w, const int h) : x(x), y(y), w(w), h(h) {}
 
 	[[nodiscard]] SDL_Rect getSDLRect() const {
 		return { x, y, w, h };
@@ -301,7 +309,7 @@ struct Rectangle2F {
 	float x, y, w, h;
 
     Rectangle2F() : x(0.f), y(0.f), w(0.f), h(0.f) {}
-	Rectangle2F(float x, float y, float w, float h) : x(x), y(y), w(w), h(h) {}
+	Rectangle2F(const float x, const float y, const float w, const float h) : x(x), y(y), w(w), h(h) {}
 
 	[[nodiscard]] SDL_FRect getSDLRect() const {
 		SDL_FRect rect = { x, y, w, h };
@@ -358,7 +366,7 @@ struct Dimension2i {
 	int w, h;
 
 	Dimension2i() : Dimension2i(0, 0) {}
-	Dimension2i(int w, int h) : w(w), h(h) {}
+	Dimension2i(const int w, const int h) : w(w), h(h) {}
 };
 
 /**
@@ -367,7 +375,7 @@ struct Dimension2i {
 * @return
 *			a random integer value between "min" and "max", both inclusive
 */
-inline int getRandom(int min, int max) {
+inline int getRandom(const int min, const int max) {
 	return (int)(rand() % (max - min)) + min;
 }
 

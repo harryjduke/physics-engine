@@ -1,9 +1,9 @@
-/*
- * @file MyGame.cpp
- * @author Harry
- * @date 16/05/2024
- * @copyright (c) 2024 Harry Duke
- */
+//  This file is part of CI517_GameEngine <https://github.com/harryjduke/CI517_GameEngine>.
+//  Copyright (c) 2024 Harry Duke <harryjduke@gmail.com>
+//
+//  This program is distributed under the terms of the GNU General Public License version 2.
+//  You should have received a copy of the GNU General Public License along with this program.
+//  If not, see <https://github.com/harryjduke/CI517_GameEngine/blob/main/LICENSE> or <https://www.gnu.org/licenses/>.
 
 #include "MyGame.h"
 
