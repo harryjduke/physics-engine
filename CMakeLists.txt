@@ -1,16 +1,29 @@
 cmake_minimum_required(VERSION 3.28)
-set(CMAKE_CXX_STANDARD 17)
 
 project(CI517_GameEngine)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 
-# --- SDL2 SETUP ---
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl2)
-set(SDL2_PATH "libs/SDL2/x86_64-w64-mingw32")
-set(SDL2_IMAGE_PATH "libs/SDL2_image/x86_64-w64-mingw32")
+# Build with shared libraries by default
+option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
 
-# Find SDL2 libraries
-find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
+# Setup build output directories
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CI517_GameEngine_BINARY_DIR}/build_results/bin")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CI517_GameEngine_BINARY_DIR}/build_results/bin")
+
+# --- FETCH PACKAGES ---
+include(FetchContent)
+FetchContent_Declare(
+        SDL2
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+        GIT_TAG release-2.30.7
+)
+FetchContent_Declare(
+        SDL2_image
+        GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
+        GIT_TAG release-2.8.2
+)
+FetchContent_MakeAvailable(SDL2 SDL2_image)
 
 # --- ADD SUBDIRECTORIES ---
 add_subdirectory(engine)
