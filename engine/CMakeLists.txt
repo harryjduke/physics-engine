@@ -1,4 +1,4 @@
-# Create a library target named 'Engine' from the source files
+# Create the 'Engine' library target
 add_library(Engine
         src/XCube2d.cpp
         include/XCube2d.h
@@ -17,10 +17,15 @@ add_library(Engine
 # Specify the include directories for the 'Engine' target
 target_include_directories(Engine PUBLIC include)
 
-# Link the SDL2 libraries to the 'Engine' target
-target_link_libraries(Engine SDL2::Main SDL2::Image)
+# Link external libraries to the 'Engine' target
+target_link_libraries(Engine
+        PUBLIC
+        SDL2::SDL2main
+        SDL2::SDL2
+        SDL2_image::SDL2_image
+)
 
-# Define __DEBUG if we are in the Debug build
+# Define __DEBUG macro for Debug builds
 if(CMAKE_BUILD_TYPE MATCHES Debug)
     target_compile_definitions(Engine PUBLIC __DEBUG)
 endif()

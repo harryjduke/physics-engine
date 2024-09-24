@@ -17,6 +17,8 @@
 
 #include <cmath>
 
+#include <SDL_image.h>
+
 SDL_Renderer* GraphicsEngine::renderer = nullptr;
 
 GraphicsEngine::GraphicsEngine() : fpsAverage(0), fpsPrevious(0), fpsStart(0), fpsEnd(0), drawColor(toSDLColor(0, 0, 0, 255))

@@ -16,14 +16,13 @@
 #ifndef GRAPHICS_ENGINE_H
 #define GRAPHICS_ENGINE_H
 
-#include <cstdio>
-#include <string>
-#include <memory>
+//#include <cstdio>
 #include <iostream>
+#include <memory>
+#include <string>
 #include <vector>
 //code from xcube 2d
 #include <SDL.h>
-#include <SDL_image.h>
 
 #include "utils/EngineCommon.h"
 #include "utils/GameMath.h"
