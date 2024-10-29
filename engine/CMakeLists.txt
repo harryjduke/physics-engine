@@ -20,12 +20,11 @@ target_include_directories(Engine PUBLIC include)
 # Link external libraries to the 'Engine' target
 target_link_libraries(Engine
         PUBLIC
-        SDL2::SDL2main
-        SDL2::SDL2
-        SDL2_image::SDL2_image
+        $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+        $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>
 )
 
 # Define __DEBUG macro for Debug builds
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-    target_compile_definitions(Engine PUBLIC __DEBUG)
-endif()
+target_compile_definitions(Engine PUBLIC $<$<CONFIG:Debug>:__DEBUG>)
+
