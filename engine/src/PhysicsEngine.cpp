@@ -94,7 +94,7 @@ RigidBody::RigidBody(const Vector2F &centerOfMass, const std::vector<Vector2F> &
     setCollisionMesh(collisionMesh);
 }
 
-void RigidBody::setMass(float mass) { if (mass > 0) inverseMass = 1 / mass; }
+void RigidBody::setMass(const float mass) { if (mass > 0) inverseMass = 1 / mass; }
 
 const std::vector<Vector2F> &RigidBody::getCollisionMesh() const {
     return collisionMesh;
@@ -103,7 +103,7 @@ const std::vector<Vector2F> &RigidBody::getCollisionMesh() const {
 void RigidBody::setCollisionMesh(std::vector<Vector2F> newCollisionMesh) {
     float newMomentOfInertia;
     try {
-        Vector2F centroid = PhysicsEngine::calculateCentroid(newCollisionMesh);
+        const Vector2F centroid = PhysicsEngine::calculateCentroid(newCollisionMesh);
         // Adjust vertices relative to the new centroid
         for (Vector2F& vertex : newCollisionMesh) vertex -= centroid;
 
@@ -153,8 +153,8 @@ RectF RigidBody::getBoundingBox() const {
 
 void RigidBody::rotate(const float angleRadians) {
     // Calculate sine and cosine of the angleRadians
-    float sinAngle = std::sin(angleRadians);
-    float cosAngle = std::cos(angleRadians);
+    const float sinAngle = std::sin(angleRadians);
+    const float cosAngle = std::cos(angleRadians);
 
     for (auto& vertex : collisionMesh){
         vertex = { // Rotate the vertex
@@ -178,8 +178,7 @@ PhysicsEngine::PhysicsEngine() :
 #endif
 { }
 
-void PhysicsEngine::update(const float deltaTime)
-{
+void PhysicsEngine::update(const float deltaTime) const {
     for (const auto& rigidBody : rigidBodies)
     {
 #ifdef __DEBUG
@@ -289,10 +288,10 @@ PhysicsEngine::CollisionInfo PhysicsEngine::getCollision(const std::shared_ptr<R
         {
             float penetrationMagnitude = std::min(rigidBodyBMaxProjection - rigidBodyAMinProjection,
                                             rigidBodyAMaxProjection - rigidBodyBMinProjection);
-            float timeSinceCollisionOnCurrentAxis = std::abs(penetrationMagnitude / relativeVelocityAB.dot(axis));
 
             // Find the penetration with the smallest magnitude to work out how the objects should be separated
-            if (timeSinceCollisionOnCurrentAxis < timeSinceCollision)
+            if (float timeSinceCollisionOnCurrentAxis = std::abs(penetrationMagnitude / relativeVelocityAB.dot(axis));
+                timeSinceCollisionOnCurrentAxis < timeSinceCollision)
             {
                 timeSinceCollision = timeSinceCollisionOnCurrentAxis;
                 penetrationVector = axis * penetrationMagnitude;
@@ -300,8 +299,8 @@ PhysicsEngine::CollisionInfo PhysicsEngine::getCollision(const std::shared_ptr<R
 
                 // Multiple axis can give the same result despite not pointing the correct way ( i.e. parallel edges will
                 // have opposite normals along the same axis) so reverse the direction if it is not pointing the right way
-                Vector2F relativeVelocity = rigidBodyA->velocity - rigidBodyB->velocity;
-                if (relativeVelocity.dot(penetrationVector) > 0.0f) {
+                if (Vector2F relativeVelocity = rigidBodyA->velocity - rigidBodyB->velocity;
+                    relativeVelocity.dot(penetrationVector) > 0.0f) {
                     penetrationVector = -penetrationVector;
                 }
 
@@ -322,7 +321,7 @@ PhysicsEngine::CollisionInfo PhysicsEngine::getCollision(const std::shared_ptr<R
 
                 for (int i = 1; i < collisionMesh.size(); ++i) {
                     Vector2F vertex = collisionMesh[i];
-                    float projection = vertex.dot(axis);
+                    const float projection = vertex.dot(axis);
 
                     if (std::abs(projection - minProjection) <= std::max(std::abs(projection), std::abs(minProjection)) * SDL_FLT_EPSILON * 10)
                         minVertices.push_back(vertex);
@@ -456,12 +455,11 @@ Vector2F PhysicsEngine::calculateCentroid(const std::vector<Vector2F>& polygonVe
 
     Vector2F centroid{};
     float signedArea = 0.0f;
-    size_t numVertices = polygonVertices.size();
 
-    for (size_t i = 0; i < numVertices; ++i) {
-        size_t j = (i + 1) % numVertices;
+    for (size_t i = 0; i < polygonVertices.size(); ++i) {
+        const size_t j = (i + 1) % polygonVertices.size();
 
-        float A = polygonVertices[i].x * polygonVertices[j].y - polygonVertices[j].x * polygonVertices[i].y;
+        const float A = polygonVertices[i].x * polygonVertices[j].y - polygonVertices[j].x * polygonVertices[i].y;
         signedArea += A;
         centroid.x += (polygonVertices[i].x + polygonVertices[j].x) * A;
         centroid.y += (polygonVertices[i].y + polygonVertices[j].y) * A;
@@ -475,7 +473,7 @@ Vector2F PhysicsEngine::calculateCentroid(const std::vector<Vector2F>& polygonVe
     return centroid;
 }
 
-float PhysicsEngine::calculateMomentOfInertia(const std::vector<Vector2F>& polygonVertices, float inverseMass) {
+float PhysicsEngine::calculateMomentOfInertia(const std::vector<Vector2F>& polygonVertices, const float inverseMass) {
     if (polygonVertices.size() < 3) {
         throw EngineException("Invalid Polygon", "Moment of inertia calculation requires at least 3 vertices.");
     }
@@ -537,9 +535,9 @@ float PhysicsEngine::calculateMomentOfInertia(const std::vector<Vector2F>& polyg
     return momentOfInertiaAtP1 - polygonVertices[0].getDistanceSquaredTo(Vector2F()) / inverseMass;
 }
 
-void PhysicsEngine::setGravity(float gravityValue) { gravity = Vector2F(0, gravityValue); }
+void PhysicsEngine::setGravity(const float gravityValue) { gravity = Vector2F(0, gravityValue); }
 
-void PhysicsEngine::setGravity(Vector2F gravityValue) { gravity = gravityValue; }
+void PhysicsEngine::setGravity(const Vector2F gravityValue) { gravity = gravityValue; }
 
 #ifdef __DEBUG
 
@@ -547,7 +545,7 @@ void PhysicsEngine::drawDebugDEBUG()
 {
     if (doDebugDEBUG)
     {
-        auto graphicsEngine =  XCube2Engine::getInstance()->getGraphicsEngine();
+        const auto graphicsEngine =  XCube2Engine::getInstance()->getGraphicsEngine();
 
         // Draw all RigidBodies
         for (const auto& rigidBody : rigidBodies) {

@@ -2,7 +2,7 @@
 add_executable(${GAME_NAME}
         src/main.cpp
         src/MyGame.cpp
-        include/MyGame.h)
+        src/MyGame.h)
 
 # Specify the include directories for the 'MyGame' target
 target_include_directories(${GAME_NAME} PRIVATE include)

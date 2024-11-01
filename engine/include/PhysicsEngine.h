@@ -129,7 +129,7 @@ public:
      * RigidBody registered with the PhysicsEngine, applies gravity and handles collisions
      * @param deltaTime  The time (in seconds) since the last frame
      */
-    void update(float deltaTime);
+    void update(float deltaTime) const;
 
     /**
      * Registers the given RigidBody with this PhysicsEngine so that it can be included in the physics simulation
@@ -220,7 +220,7 @@ public:
      * Set whether the graphics engine should render debug for all RigidBodies
      * @param value The value to set doDebugDEBUG to
      */
-    void setDoDebug(bool value) { doDebugDEBUG = value;}
+    void setDoDebug(const bool value) { doDebugDEBUG = value;}
     /**
      * DEBUG ONLY
      * A method, only run in the Debug build and when doDebugDEBUG is true, that draws the collisions of all the

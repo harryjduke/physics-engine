@@ -11,7 +11,7 @@
 
 #include "utils/GameMath.h"
 
-MyGame::MyGame() : AbstractGame(),
+MyGame::MyGame() :
     physicsObject1(std::make_shared<RigidBody>(Vector2F{1000, 400}, 2000, 60, true)),
     physicsObject2(std::make_shared<RigidBody>(Vector2F{100, 100}, 200, 60, true, 1)),
     objectSpawnCooldown(.2),
@@ -33,8 +33,6 @@ MyGame::~MyGame() = default;
 
 void MyGame::handleKeyEvents()
 {
-    float speed = 3.f;
-
     if (eventEngine->isPressed(BTN_LEFT) && gameTime - lastSpawnedObjectTime > objectSpawnCooldown)
     {
         lastSpawnedObjectTime = gameTime;
