@@ -4,6 +4,7 @@ A physics subsystem built on the [XCube2D] game engine, written in C++
 using [SDL2]. This subsystem implements both linear and angular rigid body dynamics along with
 collision detection and response. 
 
+![physics-engine_demo](https://github.com/user-attachments/assets/a6392518-67f1-4fea-b134-31343d658452)
 
 ## Dependencies
 
@@ -126,6 +127,16 @@ Distributed under the [GPLv2](https://www.gnu.org/licenses/old-licenses/gpl-2.0.
 See [LICENCE.txt](LICENSE) for more information.
 
 ## Credits
+
+- **[XCube2D](https://github.com/AlmasB/xcube2d)** - The base game engine for this subsystem.
+- **Collision Detection**: 
+  - [Collision Detection Using the Separating Axis Theorem - Kah Shiu Chong](https://code.tutsplus.com/collision-detection-using-the-separating-axis-theorem--gamedev-169t)
+  - [Linear Collision Resolution in 2D Game Physics - pikuma](https://www.youtube.com/watch?v=1L2g4ZqmFLQ)
+- **Physics Calculations**: 
+  - [Physics articles (Parts 1, 2 & 3) - Chris Hecker](https://www.chrishecker.com/Rigid_Body_Dynamics)
+- **Moment of Inertia**: 
+  - [Moments of Inertia for Triangles and other Polygons - Robert Fotino](https://fotino.me/moment-of-inertia-algorithm/)
+  - [Calculating the moment of inertia of a triangle - Matt Anderson](https://www.youtube.com/watch?v=yEa8npNVejg)
 
 [XCube2D]: https://github.com/AlmasB/xcube2d
 
