@@ -23,8 +23,8 @@ You can also follow the [vcpkg] instructions for [Windows](#windows) on other pl
 
 1. **Clone the Repository:**
     ```shell
-    git clone https://github.com/harryjduke/physics-engine_CI517.git
-    cd physics-engine_CI517
+    git clone https://github.com/harryjduke/physics-engine.git
+    cd physics-engine
     ``` 
 2. **Install prerequisites**
     - [Install Git](https://git-scm.com/downloads/win) if not already installed.
@@ -98,8 +98,8 @@ You can also follow the [vcpkg] instructions for [Windows](#windows) on other pl
 2. Clone and build the project:
     ```shell
     # clone this repository
-    git clone https://github.com/harryjduke/physics-engine_ci517.git
-    cd physics-engine_ci517
+    git clone https://github.com/harryjduke/physics-engine.git
+    cd physics-engine
 
     # build
     mkdir build
